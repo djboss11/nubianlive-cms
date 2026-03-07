@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "./api";
+import { useAuth0 } from "@auth0/auth0-react";
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');`;
 
 const css = `
@@ -1655,7 +1656,25 @@ function PlatformSettings() {
 export default function OTTCMSDashboard() {
   const [active, setActive] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
 
+  if (isLoading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg)", color: "var(--text3)", fontFamily: "'DM Mono', monospace" }}>
+      Loading...
+    </div>
+  );
+
+  if (!isAuthenticated) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg)", gap: 24 }}>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "var(--text)" }}>▶ Nubian Live</div>
+      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--text3)" }}>CMS Admin Dashboard</div>
+      <button onClick={() => loginWithRedirect()} style={{
+        background: "var(--accent)", color: "var(--bg)", border: "none",
+        borderRadius: 10, padding: "14px 40px", fontFamily: "'Syne', sans-serif",
+        fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 16,
+      }}>Sign In to Continue</button>
+    </div>
+  );
   const panels = {
     dashboard: <Dashboard />,
     content: <ContentLibrary />,
