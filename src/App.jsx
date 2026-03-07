@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-
+import { api } from "./api";
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');`;
 
 const css = `
@@ -157,6 +157,12 @@ function MiniChart({ color }) {
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 
 function Dashboard() {
+  const [analytics, setAnalytics] = useState({ total_content: 0, active_subscribers: 0, live_streams: 0 });
+
+  useEffect(() => {
+    api.getAnalytics().then(data => setAnalytics(data));
+  }, []);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
@@ -263,13 +269,22 @@ function ContentLibrary() {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [content, setContent] = useState(mockContent);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    api.getContent().then(data => {
+      if (data && data.length > 0) setContent(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
   const types = ["ALL", "VOD", "LIVE", "LINEAR", "PPV"];
-  const filtered = mockContent.filter(c =>
+  const filtered = content.filter(c =>
     (filter === "ALL" || c.type === filter) &&
     c.title.toLowerCase().includes(search.toLowerCase())
   );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -833,12 +848,21 @@ function HealthBar({ pct, color }) {
 }
 
 function LiveStreamManager() {
+  const [streams, setStreams] = useState(liveStreams);
   const [selected, setSelected] = useState(liveStreams[0]);
   const [bitrateHistory] = useState(() => liveStreams.reduce((acc, s) => {
     acc[s.id] = Array.from({ length: 24 }, (_, i) => s.targetBitrate * (0.85 + Math.random() * 0.2));
     return acc;
   }, {}));
 
+  useEffect(() => {
+    api.getStreams().then(data => {
+      if (data && data.length > 0) {
+        setStreams(data);
+        setSelected(data[0]);
+      }
+    }).catch(() => {});
+  }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1008,9 +1032,16 @@ function SubscriberManagement() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
+  const [subList, setSubList] = useState(subscribers);
   const avatarColors = ["#00d4ff", "#a855f7", "#ff9533", "#00e5a0", "#ff4d6a", "#ffd166"];
 
-  const filtered = subscribers.filter(s =>
+  useEffect(() => {
+    api.getSubscribers().then(data => {
+      if (data && data.length > 0) setSubList(data);
+    }).catch(() => {});
+  }, []);
+
+  const filtered = subList.filter(s =>
     (filter === "all" || s.status === filter || s.plan.toLowerCase() === filter) &&
     (s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()))
   );
