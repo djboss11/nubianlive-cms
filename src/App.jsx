@@ -724,6 +724,20 @@ function PPVPanel() {
 // ── MONETIZATION ──────────────────────────────────────────────────────────────
 
 function Monetization() {
+  const { user } = useAuth0();
+
+  const handleSubscribe = async (plan) => {
+    if (!user) return;
+    const result = await api.createCheckout(plan, user.email);
+    if (result.url) window.location.href = result.url;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800 }}>Monetization</div>
+        <div style={{ color: "var(--text3)", fontSize: 13, fontFamily: "'DM Mono', monospace", marginTop: 2 }}>SVOD · AVOD / SSAI · TVOD · Hybrid configuration</div>
+      </div>
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
@@ -751,6 +765,31 @@ function Monetization() {
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--text)" }}>{p.subs}</div>
                 <div style={{ fontSize: 11, color: "var(--text3)" }}>subscribers</div>
+              </div>
+            </div>
+          ))}
+        </div>{[
+            { plan: "Basic", price: "$4.99/mo", subs: "3,420", color: "var(--text2)" },
+            { plan: "Standard", price: "$9.99/mo", subs: "6,880", color: "var(--accent)" },
+            { plan: "Premium", price: "$14.99/mo", subs: "2,100", color: "var(--yellow)" },
+          ].map(p => (
+            <div key={p.plan} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+              <div>
+                <div style={{ fontWeight: 600, color: p.color }}>{p.plan}</div>
+                <div style={{ fontSize: 12, color: "var(--text3)", fontFamily: "'DM Mono', monospace" }}>{p.price}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--text)" }}>{p.subs}</div>
+                  <div style={{ fontSize: 11, color: "var(--text3)" }}>subscribers</div>
+                </div>
+                <button onClick={() => handleSubscribe(p.plan)} style={{
+                  background: p.color === "var(--text2)" ? "var(--surface3)" : `${p.color}22`,
+                  border: `1px solid ${p.color}66`,
+                  color: p.color, borderRadius: 8, padding: "6px 14px",
+                  fontSize: 11, cursor: "pointer", fontWeight: 600,
+                  fontFamily: "'DM Mono', monospace", whiteSpace: "nowrap",
+                }}>Subscribe →</button>
               </div>
             </div>
           ))}

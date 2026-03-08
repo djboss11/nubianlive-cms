@@ -36,4 +36,14 @@ export const api = {
     formData.append("file", file);
     return fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData }).then(r => r.json());
   },
+// Stripe
+  createCheckout: (plan, email) => request("/api/stripe/create-checkout", {
+    method: "POST",
+    body: JSON.stringify({ plan, email }),
+  }),
+
+  createPPVCheckout: (title, price, email) => request("/api/stripe/create-ppv", {
+    method: "POST",
+    body: JSON.stringify({ title, price, email }),
+  }),
 };
