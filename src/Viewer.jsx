@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
-
+import Hls from "hls.js";
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');`;
 
 // ── TRANSLATIONS ──────────────────────────────────────────────────────────────
@@ -172,6 +172,7 @@ const css = `
 const featured = {
   id: 1,
   title: "NEON REQUIEM",
+  hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8",
   description: "A neo-noir thriller set in a rain-soaked African megacity. When a jazz musician witnesses a murder, he's drawn into a web of corporate espionage, ancient ritual, and electric danger.",
   genre: "Thriller · Drama",
   year: 2024,
