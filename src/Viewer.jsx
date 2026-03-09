@@ -383,21 +383,62 @@ function ContentRow({ category, onSelect }) {
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 
+const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8";
+
 function Hero({ onPlay, t }) {
+  const bgVideoRef = useRef(null);
+
+  useEffect(() => {
+    const video = bgVideoRef.current;
+    if (!video) return;
+
+    let hls;
+    if (Hls.isSupported()) {
+      hls = new Hls({ autoStartLoad: true });
+      hls.loadSource(HERO_HLS_URL);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = HERO_HLS_URL;
+      video.play().catch(() => {});
+    }
+
+    // Fade audio in after 2 seconds
+    video.volume = 0;
+    const fadeTimer = setTimeout(() => {
+      video.muted = false;
+      let vol = 0;
+      const step = setInterval(() => {
+        vol = Math.min(vol + 0.05, 0.35);
+        video.volume = vol;
+        if (vol >= 0.35) clearInterval(step);
+      }, 100);
+    }, 2000);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      if (hls) hls.destroy();
+    };
+  }, []);
+
   return (
     <div style={{ position: "relative", height: "85vh", minHeight: 500, overflow: "hidden" }}>
-      {/* Background */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: featured.gradient,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <span style={{ fontSize: 140, opacity: 0.12 }}>{featured.thumb}</span>
-      </div>
+      {/* Background video */}
+      <video
+        ref={bgVideoRef}
+        muted
+        loop
+        playsInline
+        style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover", pointerEvents: "none",
+        }}
+      />
 
       {/* Gradient overlay */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg) 0%, transparent 60%)" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 50%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg) 0%, #00000088 60%, #00000044 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 55%)" }} />
 
       {/* Content */}
       <div style={{ position: "absolute", bottom: "18%", left: 48, maxWidth: 520 }}>
