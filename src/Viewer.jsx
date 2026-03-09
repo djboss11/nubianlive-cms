@@ -236,6 +236,17 @@ const categories = [
     ],
   },
   {
+    name: "Movies",
+    items: [
+      { id: 50, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
+      { id: 51, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
+      { id: 52, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
+      { id: 53, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
+      { id: 54, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
+      { id: 55, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
+    ],
+  },
+  {
     name: "Documentaries",
     items: [
       { id: 30, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
