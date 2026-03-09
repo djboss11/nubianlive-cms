@@ -672,42 +672,7 @@ function PlayerModal({ item, onClose }) {
     </div>
   );
 }
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#000e", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "80vw", maxWidth: 900, background: "var(--bg2)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
-        {/* Fake player */}
-        <div style={{ height: 480, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-          <span style={{ fontSize: 100, opacity: 0.3 }}>{item.thumb}</span>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#ffffff22", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #ffffff44", cursor: "pointer" }}>
-              <span style={{ fontSize: 28, marginLeft: 5 }}>▶</span>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-          {/* Controls bar */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "40px 24px 20px", background: "linear-gradient(to top, #000, transparent)" }}>
-            <div style={{ height: 4, background: "#333", borderRadius: 2, marginBottom: 14, cursor: "pointer" }}>
-              <div style={{ width: "35%", height: "100%", background: "var(--accent)", borderRadius: 2 }} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <span style={{ fontSize: 20, cursor: "pointer" }}>▶</span>
-              <span style={{ fontSize: 18, cursor: "pointer" }}>⏭</span>
-              <span style={{ fontSize: 16, cursor: "pointer" }}>🔊</span>
-              <span style={{ fontSize: 12, color: "var(--text2)", fontFamily: "'DM Mono', monospace" }}>35:22 / 1:52:00</span>
-              <div style={{ flex: 1 }} />
-              <span style={{ fontSize: 12, cursor: "pointer", color: "var(--text2)" }}>CC</span>
-              <span style={{ fontSize: 16, cursor: "pointer" }}>⛶</span>
-            </div>
-          </div>
-        </div>
-        <div style={{ padding: "20px 24px" }}>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 1 }}>{item.title}</div>
-          <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{item.type} · {item.year || "Live"}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
