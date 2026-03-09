@@ -387,7 +387,7 @@ const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c
 
 function Hero({ onPlay, t }) {
   const bgVideoRef = useRef(null);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
 
   const toggleMute = () => {
     const video = bgVideoRef.current;
@@ -400,11 +400,8 @@ function Hero({ onPlay, t }) {
     const video = bgVideoRef.current;
     if (!video) return;
 
-    // Unmute and set volume as soon as playback begins
-    const onPlaying = () => {
-      video.muted = false;
-      video.volume = 0.5;
-    };
+    // Set volume for when user unmutes
+    const onPlaying = () => { video.volume = 0.5; };
     video.addEventListener("playing", onPlaying, { once: true });
 
     // HLS.js doesn't honour the loop attribute — restart manually
