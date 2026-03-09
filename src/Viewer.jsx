@@ -387,6 +387,14 @@ const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c
 
 function Hero({ onPlay, t }) {
   const bgVideoRef = useRef(null);
+  const [muted, setMuted] = useState(false);
+
+  const toggleMute = () => {
+    const video = bgVideoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  };
 
   useEffect(() => {
     const video = bgVideoRef.current;
@@ -442,6 +450,23 @@ function Hero({ onPlay, t }) {
       {/* Gradient overlay */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg) 0%, #00000088 60%, #00000044 100%)" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 55%)" }} />
+
+      {/* Mute toggle */}
+      <button onClick={toggleMute} style={{
+        position: "absolute", bottom: 24, right: 24,
+        width: 40, height: 40, borderRadius: "50%",
+        background: "#000000aa", border: "1px solid #ffffff33",
+        color: "white", fontSize: 18, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        backdropFilter: "blur(6px)", transition: "background 0.15s",
+        zIndex: 10,
+      }}
+        onMouseEnter={e => e.currentTarget.style.background = "#000000cc"}
+        onMouseLeave={e => e.currentTarget.style.background = "#000000aa"}
+        title={muted ? "Unmute" : "Mute"}
+      >
+        {muted ? "🔇" : "🔊"}
+      </button>
 
       {/* Content */}
       <div style={{ position: "absolute", bottom: "18%", left: 48, maxWidth: 520 }}>
