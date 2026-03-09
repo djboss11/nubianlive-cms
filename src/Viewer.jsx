@@ -214,7 +214,7 @@ const categories = [
     ],
   },
   {
-    name: "Drama & Thriller",
+    name: "Reality",
     items: [
       { id: 20, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
       { id: 21, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
@@ -222,6 +222,17 @@ const categories = [
       { id: 23, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
       { id: 24, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
       { id: 25, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
+    ],
+  },
+  {
+    name: "Lifestyle",
+    items: [
+      { id: 40, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
+      { id: 41, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
+      { id: 42, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
+      { id: 43, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
+      { id: 44, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
+      { id: 45, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
     ],
   },
   {
