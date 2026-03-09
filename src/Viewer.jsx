@@ -618,12 +618,60 @@ function SearchPanel({ query, onSelect, t }) {
 // ── PLAYER MODAL ──────────────────────────────────────────────────────────────
 
 function PlayerModal({ item, onClose }) {
+  const videoRef = useRef(null);
+
   useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !item.hlsUrl) return;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(item.hlsUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+      return () => hls.destroy();
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = item.hlsUrl;
+      video.play();
+    }
+  }, [item]);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "#000e", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "80vw", maxWidth: 900, background: "var(--bg2)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
+        <div style={{ position: "relative", background: "#000" }}>
+          {item.hlsUrl ? (
+            <video
+              ref={videoRef}
+              controls
+              style={{ width: "100%", maxHeight: 480, display: "block" }}
+            />
+          ) : (
+            <div style={{ height: 480, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 100, opacity: 0.3 }}>{item.thumb}</span>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#ffffff22", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #ffffff44" }}>
+                  <span style={{ fontSize: 28, marginLeft: 5 }}>▶</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 1 }}>{item.title}</div>
+          <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{item.type} · {item.year || "Live"}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
   return (
     <div style={{ position: "fixed", inset: 0, background: "#000e", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width: "80vw", maxWidth: 900, background: "var(--bg2)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
@@ -677,12 +725,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
       borderBottom: scrolled ? "1px solid var(--border)" : "none",
     }}>
       {/* Logo */}
-      <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <div style={{ width: 28, height: 28, background: "var(--accent)", borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>▶</span>
-        </div>
-        <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 2, color: "var(--accent)" }}>NUBIAN LIVE</span>
-      </div>
+      <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
+  <img src="/logo.png" alt="Nubian Black Television" style={{ height: 36, width: "auto" }} />
+</div>
 
       {/* Nav links */}
       <div style={{ display: "flex", gap: 24, flex: 1 }}>
