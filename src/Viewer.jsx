@@ -392,9 +392,23 @@ function Hero({ onPlay, t }) {
     const video = bgVideoRef.current;
     if (!video) return;
 
+    // Unmute and set volume as soon as playback begins
+    const onPlaying = () => {
+      video.muted = false;
+      video.volume = 0.5;
+    };
+    video.addEventListener("playing", onPlaying, { once: true });
+
+    // HLS.js doesn't honour the loop attribute — restart manually
+    const onEnded = () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+    video.addEventListener("ended", onEnded);
+
     let hls;
     if (Hls.isSupported()) {
-      hls = new Hls({ autoStartLoad: true });
+      hls = new Hls();
       hls.loadSource(HERO_HLS_URL);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
@@ -403,20 +417,9 @@ function Hero({ onPlay, t }) {
       video.play().catch(() => {});
     }
 
-    // Fade audio in after 2 seconds
-    video.volume = 0;
-    const fadeTimer = setTimeout(() => {
-      video.muted = false;
-      let vol = 0;
-      const step = setInterval(() => {
-        vol = Math.min(vol + 0.05, 0.35);
-        video.volume = vol;
-        if (vol >= 0.35) clearInterval(step);
-      }, 100);
-    }, 2000);
-
     return () => {
-      clearTimeout(fadeTimer);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("ended", onEnded);
       if (hls) hls.destroy();
     };
   }, []);
