@@ -273,8 +273,9 @@ function ContentCard({ item, size = "normal", onClick }) {
   const [hovered, setHovered] = useState(false);
   const { t } = useLang();
   const isLive = item.type === "LIVE";
-  const w = size === "large" ? 260 : size === "small" ? 140 : 200;
-  const h = size === "large" ? 146 : size === "small" ? 79 : 113;
+  // Portrait 3:4 dimensions
+  const w = size === "large" ? 200 : size === "small" ? 120 : 160;
+  const h = Math.round(w * (4 / 3));
 
   return (
     <div
@@ -284,51 +285,61 @@ function ContentCard({ item, size = "normal", onClick }) {
       style={{
         width: w, flexShrink: 0, cursor: "pointer",
         transform: hovered ? "scale(1.06)" : "scale(1)",
-        transition: "transform 0.2s ease, z-index 0s",
+        transition: "transform 0.2s ease",
         zIndex: hovered ? 10 : 1, position: "relative",
-        borderRadius: 6, overflow: "hidden",
       }}
     >
-      {/* Thumbnail */}
+      {/* Poster thumbnail */}
       <div style={{
         width: w, height: h,
-        background: `linear-gradient(135deg, #${Math.floor(Math.random() * 0x444444 + 0x111111).toString(16).padStart(6, "0")}, #111)`,
-        borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: size === "small" ? 28 : 40, border: "1px solid var(--border)",
+        background: `linear-gradient(160deg, #1a1a2e, #111)`,
+        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: size === "small" ? 32 : 48, border: "1px solid var(--border)",
         position: "relative", overflow: "hidden",
       }}>
         <span>{item.thumb}</span>
+
+        {/* Bottom gradient for title */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "28px 10px 10px",
+          background: "linear-gradient(to top, #000d, transparent)",
+          fontSize: 12, fontWeight: 600,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>{item.title}</div>
+
         {isLive && (
           <div style={{ position: "absolute", top: 8, left: 8 }}><LiveBadge /></div>
         )}
         {item.match && (
           <div style={{ position: "absolute", top: 8, right: 8, fontSize: 10, color: "var(--green)", fontFamily: "'DM Mono', monospace", fontWeight: 700 }}>{item.match}%</div>
         )}
+
+        {/* Hover overlay with play button */}
         {hovered && (
           <div style={{
             position: "absolute", inset: 0, background: "#000a",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <div style={{
-              width: 44, height: 44, borderRadius: "50%",
+              width: 48, height: 48, borderRadius: "50%",
               background: "white", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <span style={{ fontSize: 18, marginLeft: 3 }}>▶</span>
+              <span style={{ fontSize: 20, marginLeft: 4 }}>▶</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Info on hover */}
+      {/* Info panel below on hover */}
       {hovered && (
         <div style={{
-          background: "var(--surface)", borderRadius: "0 0 6px 6px",
+          background: "var(--surface)", borderRadius: "0 0 8px 8px",
           padding: "10px 12px", border: "1px solid var(--border)", borderTop: "none",
           position: "absolute", left: 0, right: 0, top: h - 1, zIndex: 20,
           boxShadow: "0 8px 24px #000a",
         }}>
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
             {isLive ? (
               <span style={{ fontSize: 11, color: "var(--text3)" }}>👁 {item.viewers}</span>
             ) : (
@@ -338,7 +349,7 @@ function ContentCard({ item, size = "normal", onClick }) {
               </>
             )}
           </div>
-          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 6 }}>
             <button style={{ background: "white", color: "black", borderRadius: 4, padding: "5px 12px", fontSize: 11, fontWeight: 700 }}>▶ {t.play}</button>
             <button style={{ background: "var(--surface2)", color: "white", borderRadius: 4, padding: "5px 10px", fontSize: 11, border: "1px solid var(--border)" }}>{t.addToList}</button>
           </div>
@@ -364,8 +375,8 @@ function ContentRow({ category, onSelect }) {
           color: "white", fontSize: 20, zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center",
         }}>‹</button>
         <div ref={rowRef} style={{
-          display: "flex", gap: 8, overflowX: "auto", paddingLeft: 48, paddingRight: 48,
-          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 60,
+          display: "flex", gap: 12, overflowX: "auto", paddingLeft: 48, paddingRight: 48,
+          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 80,
         }}>
           {category.items.map(item => (
             <ContentCard key={item.id} item={item} onClick={onSelect} />
