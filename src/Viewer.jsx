@@ -716,6 +716,7 @@ function PlayerModal({ item, onClose }) {
             <video
               ref={videoRef}
               controls
+              muted
               style={{ width: "100%", maxHeight: 480, display: "block" }}
             />
           ) : (
