@@ -804,7 +804,7 @@ export default function NubianLiveViewer() {
       {/* Footer */}
       <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: "40px 48px", marginTop: 60 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 2, color: "var(--accent)" }}>NUBIAN LIVE</div>
+          <img src="/logo.png" alt="Nubian Black Television" style={{ height: 32, width: "auto" }} />
           <div style={{ display: "flex", gap: 24, fontSize: 13, color: "var(--text3)" }}>
             {[t.about, t.help, t.privacy, t.terms, t.contact].map(l => (
               <span key={l} style={{ cursor: "pointer", transition: "color 0.15s" }}
