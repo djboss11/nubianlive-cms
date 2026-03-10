@@ -263,7 +263,7 @@ const ppvEvents = [
 ];
 
 const channels = [
-  { id: 1, name: "Channel One HD", current: "Morning News", next: "Talk Show Live", status: "live", thumb: "📺" },
+  { id: 1, name: "Nubian TV Live", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
   { id: 2, name: "Sports 24", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
   { id: 3, name: "Music Vibes", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
   { id: 4, name: "Kids Zone", current: "Cartoon Hour", next: "Story Time", status: "live", thumb: "🧸" },
@@ -513,6 +513,25 @@ function ContinueWatching({ onSelect, t }) {
 
 function LiveTV({ t }) {
   const [activeChannel, setActiveChannel] = useState(channels[0]);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !activeChannel.hlsUrl) return;
+
+    let hls;
+    if (Hls.isSupported()) {
+      hls = new Hls();
+      hls.loadSource(activeChannel.hlsUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = activeChannel.hlsUrl;
+      video.play().catch(() => {});
+    }
+
+    return () => { if (hls) hls.destroy(); };
+  }, [activeChannel]);
 
   return (
     <div style={{ padding: "24px 48px" }}>
@@ -522,18 +541,24 @@ function LiveTV({ t }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
         {/* Main player */}
         <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
-          <div style={{ height: 360, background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-            <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
+          <div style={{ position: "relative", background: "#000" }}>
+            {activeChannel.hlsUrl ? (
+              <video
+                ref={videoRef}
+                controls
+                muted
+                style={{ width: "100%", height: 360, display: "block", objectFit: "cover" }}
+              />
+            ) : (
+              <div style={{ height: 360, background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
+              </div>
+            )}
             <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 24px", background: "linear-gradient(to top, #000, transparent)" }}>
+            <div style={{ position: "absolute", bottom: activeChannel.hlsUrl ? 48 : 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
               <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
               <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
             </div>
-            <button style={{ position: "absolute", inset: 0, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#ffffff22", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #ffffff44" }}>
-                <span style={{ fontSize: 24, marginLeft: 4 }}>▶</span>
-              </div>
-            </button>
           </div>
           <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
