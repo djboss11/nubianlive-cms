@@ -813,6 +813,11 @@ export default function NubianLiveViewer() {
   const [lang, setLang] = useState("en");
   const t = T[lang];
 
+  const navigate = useCallback((p) => {
+    setPage(p);
+    setPlaying(null);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener("scroll", handleScroll);
@@ -828,7 +833,7 @@ export default function NubianLiveViewer() {
       `}</style>
 
       <Navbar
-        page={page} setPage={setPage}
+        page={page} setPage={navigate}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
         scrolled={scrolled}
       />
