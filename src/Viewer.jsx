@@ -263,10 +263,10 @@ const ppvEvents = [
 ];
 
 const channels = [
-  { id: 1, name: "Nubian TV Live", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
-  { id: 2, name: "Sports 24", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
-  { id: 3, name: "Music Vibes", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
-  { id: 4, name: "Kids Zone", current: "Cartoon Hour", next: "Story Time", status: "live", thumb: "🧸" },
+  { id: 1, name: "Eastern", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
+  { id: 2, name: "Pacific", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
+  { id: 3, name: "Africa/Europe", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
+  { id: 4, name: "Nubian Radio", current: "Cartoon Hour", next: "Story Time", status: "live", thumb: "🎙️" },
 ];
 
 const searchResults = [
@@ -547,10 +547,10 @@ function LiveTV({ t }) {
                 ref={videoRef}
                 controls
                 muted
-                style={{ width: "100%", height: 360, display: "block", objectFit: "cover" }}
+                style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
               />
             ) : (
-              <div style={{ height: 360, background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
               </div>
             )}
