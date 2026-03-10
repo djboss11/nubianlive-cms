@@ -983,6 +983,255 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
   );
 }
 
+// ── STATIC PAGES ──────────────────────────────────────────────────────────────
+
+function PageShell({ children }) {
+  const w = useWindowWidth();
+  return (
+    <div style={{ paddingTop: 100, paddingBottom: 60, maxWidth: 860, margin: "0 auto", padding: `100px ${w < 768 ? 20 : 48}px 60px` }}>
+      {children}
+    </div>
+  );
+}
+
+function PageHeading({ children }) {
+  return (
+    <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 2, marginBottom: 8 }}>{children}</h1>
+  );
+}
+
+function PageBody({ children }) {
+  return <div style={{ color: "var(--text2)", fontSize: 15, lineHeight: 1.8 }}>{children}</div>;
+}
+
+function SectionTitle({ children }) {
+  return <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 1, margin: "32px 0 10px", color: "var(--text)" }}>{children}</h2>;
+}
+
+function AboutPage() {
+  return (
+    <PageShell>
+      <PageHeading>About Nubian Television</PageHeading>
+      <div style={{ color: "var(--accent)", fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: 2, marginBottom: 24 }}>STREAMING BLACK CULTURE WORLDWIDE</div>
+      <PageBody>
+        <p>Nubian Television is a premium streaming platform built for and by the Black community. We are dedicated to amplifying Black voices, stories, and culture — from Africa to the Americas and beyond.</p>
+        <SectionTitle>Our Mission</SectionTitle>
+        <p>We believe that representation matters. Nubian Television exists to give Black creators a global stage, and Black audiences a home where their stories are centered, not marginalised. Our platform features original series, documentaries, live television, PPV events, and music programming that reflects the richness and diversity of the African diaspora.</p>
+        <SectionTitle>What We Offer</SectionTitle>
+        <p><strong style={{ color: "var(--text)" }}>On-Demand Content</strong> — Movies, series, documentaries, and reality programming available anytime.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Live TV</strong> — Four channels streaming 24/7: Eastern, Pacific, Africa/Europe, and Nubian Radio.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>PPV Events</strong> — Premium live events including boxing, concerts, and special broadcasts.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Global Reach</strong> — Available in English, French, Spanish, Portuguese, and Kiswahili.</p>
+        <SectionTitle>Our Story</SectionTitle>
+        <p>Founded with a passion for authentic Black storytelling, Nubian Television has grown into a destination for millions of viewers across Africa, the Caribbean, Europe, and North America. We partner with independent creators, production companies, and live broadcasters to bring the best in Black entertainment to your screen.</p>
+        <SectionTitle>Contact Us</SectionTitle>
+        <p>For business inquiries, partnerships, or press requests, reach us through our <strong style={{ color: "var(--text)" }}>Contact</strong> page or email us at <span style={{ color: "var(--accent)" }}>info@nubianlive.com</span>.</p>
+      </PageBody>
+    </PageShell>
+  );
+}
+
+function HelpPage() {
+  const faqs = [
+    { q: "How do I subscribe to Nubian Television?", a: "Visit our subscription page and choose from Basic, Standard, or Premium plans. Payment is processed securely through Stripe." },
+    { q: "What devices can I watch on?", a: "Nubian Television works on any modern web browser on desktop, tablet, and mobile. Apps for smart TVs and mobile platforms are coming soon." },
+    { q: "Can I watch live TV and PPV events on all plans?", a: "Live TV is available on Standard and Premium plans. PPV events are available for purchase on all plans as one-time payments." },
+    { q: "My video is buffering or not playing — what should I do?", a: "First, check your internet connection. We recommend a minimum of 5 Mbps for SD, 15 Mbps for HD, and 25 Mbps for 4K streams. Try refreshing the page or clearing your browser cache." },
+    { q: "How do I cancel my subscription?", a: "You can cancel anytime from your account settings. Cancellations take effect at the end of your current billing period." },
+    { q: "Can I share my account with family members?", a: "Premium plans allow up to 4 simultaneous streams. Basic and Standard plans allow 1 stream at a time." },
+    { q: "Is there a free trial?", a: "Yes — new subscribers get a 7-day free trial on any plan. No charges until the trial ends." },
+    { q: "What video quality is available?", a: "We stream up to 1080p HD on most content and 4K on select titles, depending on your plan and internet speed." },
+    { q: "Are there subtitles or closed captions?", a: "Subtitles are available on most VOD content. You can switch languages in the player settings." },
+    { q: "How do I contact support?", a: "Use the Contact page to send us a message. Our support team responds within 24 hours." },
+  ];
+  return (
+    <PageShell>
+      <PageHeading>Help & FAQ</PageHeading>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: 1, marginBottom: 32 }}>FREQUENTLY ASKED QUESTIONS</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {faqs.map((faq, i) => (
+          <FAQItem key={i} question={faq.q} answer={faq.a} />
+        ))}
+      </div>
+    </PageShell>
+  );
+}
+
+function FAQItem({ question, answer }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: "16px 20px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}
+        onMouseEnter={e => e.currentTarget.style.background = "var(--surface2)"}
+        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+      >
+        <span style={{ fontSize: 14, fontWeight: 500 }}>{question}</span>
+        <span style={{ fontSize: 18, color: "var(--text3)", flexShrink: 0, transition: "transform 0.2s", transform: open ? "rotate(45deg)" : "none" }}>+</span>
+      </div>
+      {open && (
+        <div style={{ padding: "0 20px 16px", color: "var(--text2)", fontSize: 14, lineHeight: 1.7, borderTop: "1px solid var(--border)" }}>
+          <div style={{ paddingTop: 14 }}>{answer}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <PageShell>
+      <PageHeading>Privacy Policy</PageHeading>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1, marginBottom: 32 }}>LAST UPDATED: MARCH 2026</div>
+      <PageBody>
+        <p>Nubian Television ("we", "us", or "our") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.</p>
+        <SectionTitle>Information We Collect</SectionTitle>
+        <p><strong style={{ color: "var(--text)" }}>Account Information:</strong> Name, email address, and payment details when you register or subscribe.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Usage Data:</strong> Pages visited, content watched, watch history, search queries, and device information.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Technical Data:</strong> IP address, browser type, operating system, and cookies.</p>
+        <SectionTitle>How We Use Your Information</SectionTitle>
+        <p>We use your data to: provide and personalise our streaming service; process subscription payments; send account-related communications; improve our platform and content recommendations; comply with legal obligations.</p>
+        <SectionTitle>Data Sharing</SectionTitle>
+        <p>We do not sell your personal data. We may share data with trusted third-party providers (such as payment processors and analytics services) strictly to operate our service. All third parties are contractually bound to protect your data.</p>
+        <SectionTitle>Cookies</SectionTitle>
+        <p>We use cookies to maintain your session, remember preferences, and analyse traffic. You can disable cookies in your browser settings, though some features may not function correctly.</p>
+        <SectionTitle>Data Retention</SectionTitle>
+        <p>We retain your data for as long as your account is active or as required by law. You may request deletion of your account and associated data at any time.</p>
+        <SectionTitle>Your Rights</SectionTitle>
+        <p>Depending on your location, you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact us at <span style={{ color: "var(--accent)" }}>privacy@nubianlive.com</span>.</p>
+        <SectionTitle>Security</SectionTitle>
+        <p>We use industry-standard encryption and security measures to protect your data. However, no method of transmission over the internet is 100% secure.</p>
+        <SectionTitle>Changes to This Policy</SectionTitle>
+        <p>We may update this policy periodically. We will notify you of significant changes via email or a notice on our platform.</p>
+      </PageBody>
+    </PageShell>
+  );
+}
+
+function TermsPage() {
+  return (
+    <PageShell>
+      <PageHeading>Terms of Service</PageHeading>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1, marginBottom: 32 }}>LAST UPDATED: MARCH 2026</div>
+      <PageBody>
+        <p>Welcome to Nubian Television. By accessing or using our platform, you agree to be bound by these Terms of Service. Please read them carefully.</p>
+        <SectionTitle>1. Eligibility</SectionTitle>
+        <p>You must be at least 13 years old to use Nubian Television. By creating an account, you confirm that all information you provide is accurate and complete.</p>
+        <SectionTitle>2. Subscriptions and Payments</SectionTitle>
+        <p>Subscriptions are billed monthly or annually in advance. You authorise us to charge your payment method on a recurring basis. All fees are non-refundable except as required by law. You may cancel at any time; cancellation takes effect at the end of the current billing cycle.</p>
+        <SectionTitle>3. Acceptable Use</SectionTitle>
+        <p>You agree not to: share your account credentials with others (beyond plan limits); copy, reproduce, or redistribute any content from our platform; use automated tools to access or scrape the service; attempt to circumvent any content protection measures.</p>
+        <SectionTitle>4. Content</SectionTitle>
+        <p>All content on Nubian Television is licensed or owned by us or our content partners. You are granted a limited, non-exclusive, non-transferable licence to stream content for personal, non-commercial use only.</p>
+        <SectionTitle>5. PPV Events</SectionTitle>
+        <p>Pay-Per-View purchases are one-time charges for a specific event or content window. PPV content is available for the specified viewing period only and is non-refundable once purchased.</p>
+        <SectionTitle>6. Termination</SectionTitle>
+        <p>We reserve the right to suspend or terminate your account if you violate these Terms. You may also terminate your account at any time by cancelling your subscription and contacting support.</p>
+        <SectionTitle>7. Disclaimer</SectionTitle>
+        <p>Nubian Television is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service. We are not liable for any indirect, incidental, or consequential damages arising from your use of the platform.</p>
+        <SectionTitle>8. Governing Law</SectionTitle>
+        <p>These Terms are governed by applicable law. Disputes will be resolved through binding arbitration where permitted by law.</p>
+        <SectionTitle>9. Changes to Terms</SectionTitle>
+        <p>We may update these Terms at any time. Continued use of the platform after changes constitutes acceptance of the new Terms.</p>
+        <SectionTitle>10. Contact</SectionTitle>
+        <p>For questions about these Terms, contact us at <span style={{ color: "var(--accent)" }}>legal@nubianlive.com</span>.</p>
+      </PageBody>
+    </PageShell>
+  );
+}
+
+function ContactPage() {
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const w = useWindowWidth();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSending(true);
+    setTimeout(() => { setSending(false); setSubmitted(true); }, 1200);
+  };
+
+  const inputStyle = {
+    width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
+    borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontSize: 14,
+    fontFamily: "inherit", outline: "none", transition: "border-color 0.15s",
+  };
+
+  if (submitted) {
+    return (
+      <PageShell>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
+          <PageHeading>Message Sent</PageHeading>
+          <p style={{ color: "var(--text2)", fontSize: 15, marginTop: 12 }}>Thanks for reaching out. We'll get back to you within 24 hours.</p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell>
+      <PageHeading>Contact Us</PageHeading>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: 1, marginBottom: 32 }}>WE'D LOVE TO HEAR FROM YOU</div>
+      <div style={{ display: "grid", gridTemplateColumns: w < 768 ? "1fr" : "1fr 1fr", gap: 40 }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "var(--text3)", fontFamily: "'DM Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>NAME</label>
+            <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="Your full name"
+              onFocus={e => e.target.style.borderColor = "var(--accent)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "var(--text3)", fontFamily: "'DM Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>EMAIL</label>
+            <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="your@email.com"
+              onFocus={e => e.target.style.borderColor = "var(--accent)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "var(--text3)", fontFamily: "'DM Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>SUBJECT</label>
+            <input required value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} style={inputStyle} placeholder="How can we help?"
+              onFocus={e => e.target.style.borderColor = "var(--accent)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "var(--text3)", fontFamily: "'DM Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>MESSAGE</label>
+            <textarea required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={5} style={{ ...inputStyle, resize: "vertical" }} placeholder="Tell us more..."
+              onFocus={e => e.target.style.borderColor = "var(--accent)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+          <button type="submit" disabled={sending} style={{
+            background: "var(--accent)", color: "white", border: "none",
+            borderRadius: 8, padding: "14px 28px", fontSize: 14, fontWeight: 600,
+            cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1,
+            transition: "opacity 0.2s", fontFamily: "inherit",
+          }}>{sending ? "Sending…" : "Send Message"}</button>
+        </form>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 8 }}>Support</div>
+            <p style={{ color: "var(--text2)", fontSize: 14, lineHeight: 1.7 }}>For technical issues, billing questions, or account help, our team is available 7 days a week.</p>
+            <p style={{ color: "var(--accent)", fontSize: 14, marginTop: 8 }}>support@nubianlive.com</p>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 8 }}>Business & Partnerships</div>
+            <p style={{ color: "var(--text2)", fontSize: 14, lineHeight: 1.7 }}>Interested in distributing content on our platform or partnering with us?</p>
+            <p style={{ color: "var(--accent)", fontSize: 14, marginTop: 8 }}>partnerships@nubianlive.com</p>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 8 }}>Press & Media</div>
+            <p style={{ color: "var(--text2)", fontSize: 14, lineHeight: 1.7 }}>For press inquiries, interview requests, or media assets.</p>
+            <p style={{ color: "var(--accent)", fontSize: 14, marginTop: 8 }}>press@nubianlive.com</p>
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
@@ -1050,6 +1299,12 @@ export default function NubianLiveViewer() {
             <SearchPanel query={searchQuery} onSelect={setPlaying} t={t} />
           </div>
         )}
+
+        {page === "about" && <AboutPage />}
+        {page === "help" && <HelpPage />}
+        {page === "privacy" && <PrivacyPage />}
+        {page === "terms" && <TermsPage />}
+        {page === "contact" && <ContactPage />}
       </div>
 
       {/* Footer */}
@@ -1072,14 +1327,39 @@ export default function NubianLiveViewer() {
             fontSize: 13,
             color: "var(--text3)",
           }}>
-            {[t.about, t.help, t.privacy, t.terms, t.contact].map(l => (
-              <span key={l} style={{ cursor: "pointer", transition: "color 0.15s" }}
+            {[
+              { label: t.about, page: "about" },
+              { label: t.help, page: "help" },
+              { label: t.privacy, page: "privacy" },
+              { label: t.terms, page: "terms" },
+              { label: t.contact, page: "contact" },
+            ].map(({ label, page: pg }) => (
+              <span key={pg} onClick={() => navigate(pg)} style={{ cursor: "pointer", transition: "color 0.15s" }}
                 onMouseEnter={e => e.target.style.color = "white"}
                 onMouseLeave={e => e.target.style.color = "var(--text3)"}
-              >{l}</span>
+              >{label}</span>
             ))}
           </div>
         </div>
+
+        {/* Social media links */}
+        <div style={{ display: "flex", gap: 16, justifyContent: isMobile ? "center" : "flex-start", marginBottom: 20 }}>
+          {[
+            { label: "📘 Facebook", url: "https://www.facebook.com/nubiantelevision" },
+            { label: "📸 Instagram", url: "https://www.instagram.com/nubiantelevision" },
+            { label: "▶️ YouTube", url: "https://www.youtube.com/@NubianTelevision" },
+            { label: "🎵 TikTok", url: "https://www.tiktok.com/@nubiantelevision?_r=1&_t=ZS-94ZwyV65Ybo" },
+          ].map(({ label, url }) => (
+            <a key={url} href={url} target="_blank" rel="noopener noreferrer" style={{
+              color: "var(--text3)", fontSize: 13, textDecoration: "none",
+              transition: "color 0.15s", whiteSpace: "nowrap",
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = "white"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--text3)"}
+            >{label}</a>
+          ))}
+        </div>
+
         <div style={{ fontSize: 12, color: "var(--text3)", textAlign: isMobile ? "center" : "left" }}>© 2026 Nubian Live. {t.rights}</div>
       </div>
 
