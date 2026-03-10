@@ -169,18 +169,23 @@ const css = `
 
 // ── MOCK DATA ─────────────────────────────────────────────────────────────────
 
+const R2 = "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev";
+const CF = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com";
+const hls = (id) => `${CF}/${id}/manifest/video.m3u8`;
+const poster = (file) => `${R2}/${file}`;
+
 const featured = {
-  id: 1,
-  title: "NEON REQUIEM",
-  hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8",
-  description: "A neo-noir thriller set in a rain-soaked African megacity. When a jazz musician witnesses a murder, he's drawn into a web of corporate espionage, ancient ritual, and electric danger.",
-  genre: "Thriller · Drama",
-  year: 2024,
+  id: 100,
+  title: "RUTLAND MANOR",
+  hlsUrl: hls("a90f760613916b84d22e7de55e7c2404"),
+  poster: poster("rutland-manor.png"),
+  description: "A group of ambitious influencers accept an invite to a luxurious manor for a career-making social event. Survival is the only trend worth chasing.",
+  genre: "Movie",
+  year: 2025,
   rating: "TV-MA",
-  duration: "1h 52m",
-  match: "97%",
-  thumb: "🎬",
-  gradient: "linear-gradient(135deg, #1a0a2e 0%, #0d1117 40%, #080808 100%)",
+  duration: "1h 30m",
+  match: "98%",
+  thumb: "🏰",
 };
 
 const continueWatching = [
@@ -216,44 +221,36 @@ const categories = [
   {
     name: "Reality",
     items: [
-      { id: 20, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 21, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 22, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
-      { id: 23, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
-      { id: 24, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
-      { id: 25, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
+      { id: 20, title: "Charnita's World S1EP1", poster: poster("charnitas-world-s1ep1.png"), hlsUrl: hls("ad3176ed4fedb56c2575fced59e21674"), type: "VOD", genre: "Reality", year: 2024, description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 21, title: "Charnita's World S1EP3", poster: poster("charnitas-world-s1ep3.png"), hlsUrl: hls("978862668c06910b50b5d1b6714c1260"), type: "VOD", genre: "Reality", year: 2024, description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 22, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
     ],
   },
   {
     name: "Lifestyle",
     items: [
-      { id: 40, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 41, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 42, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
-      { id: 43, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
-      { id: 44, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
-      { id: 45, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
+      { id: 40, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
+      { id: 41, title: "City Lights", thumb: "🌆", type: "VOD", rating: "TV-PG", year: 2024, match: 85 },
+      { id: 42, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
+      { id: 43, title: "Ocean Deep", thumb: "🐋", type: "VOD", rating: "TV-G", year: 2024, match: 88 },
     ],
   },
   {
     name: "Movies",
     items: [
-      { id: 50, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 51, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 52, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
-      { id: 53, title: "Night Protocol", thumb: "🌙", type: "VOD", rating: "TV-MA", year: 2024, match: 78 },
-      { id: 54, title: "Obsidian", thumb: "🔮", type: "VOD", rating: "TV-14", year: 2023, match: 74 },
-      { id: 55, title: "Red Kalahari", thumb: "🏜️", type: "VOD", rating: "TV-MA", year: 2024, match: 71 },
+      { id: 50, title: "Rutland Manor", poster: poster("rutland-manor.png"), hlsUrl: hls("a90f760613916b84d22e7de55e7c2404"), type: "VOD", genre: "Movie", year: 2025, description: "A group of ambitious influencers accept an invite to a luxurious manor for a career-making social event. Survival is the only trend worth chasing." },
+      { id: 51, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
+      { id: 52, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
+      { id: 53, title: "Arena Night", thumb: "🥊", type: "VOD", rating: "TV-14", year: 2024, match: 88 },
     ],
   },
   {
     name: "Documentaries",
     items: [
-      { id: 30, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
-      { id: 31, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
-      { id: 32, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
+      { id: 30, title: "Troubled Water", poster: poster("troubled-water.png"), hlsUrl: hls("d96681ec8386f8769459af8980e417d1"), type: "VOD", genre: "Documentary", year: 2023, description: "A look at environmental racism in America" },
+      { id: 31, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
+      { id: 32, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
       { id: 33, title: "Ocean Deep", thumb: "🐋", type: "VOD", rating: "TV-G", year: 2024, match: 88 },
-      { id: 34, title: "The Grid", thumb: "⚡", type: "VOD", rating: "TV-PG", year: 2023, match: 72 },
     ],
   },
 ];
@@ -319,7 +316,10 @@ function ContentCard({ item, size = "normal", onClick }) {
         fontSize: size === "small" ? 32 : 48, border: "1px solid var(--border)",
         position: "relative", overflow: "hidden",
       }}>
-        <span>{item.thumb}</span>
+        {item.poster
+          ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span>{item.thumb}</span>
+        }
 
         {/* Bottom gradient for title */}
         <div style={{
@@ -416,60 +416,13 @@ function ContentRow({ category, onSelect }) {
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 
-const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8";
-
 function Hero({ onPlay, t }) {
-  const bgVideoRef = useRef(null);
-  const [muted, setMuted] = useState(true);
-
-  const toggleMute = () => {
-    const video = bgVideoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
-  };
-
-  useEffect(() => {
-    const video = bgVideoRef.current;
-    if (!video) return;
-
-    // Set volume for when user unmutes
-    const onPlaying = () => { video.volume = 0.5; };
-    video.addEventListener("playing", onPlaying, { once: true });
-
-    // HLS.js doesn't honour the loop attribute — restart manually
-    const onEnded = () => {
-      video.currentTime = 0;
-      video.play().catch(() => {});
-    };
-    video.addEventListener("ended", onEnded);
-
-    let hls;
-    if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(HERO_HLS_URL);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = HERO_HLS_URL;
-      video.play().catch(() => {});
-    }
-
-    return () => {
-      video.removeEventListener("playing", onPlaying);
-      video.removeEventListener("ended", onEnded);
-      if (hls) hls.destroy();
-    };
-  }, []);
-
   return (
     <div style={{ position: "relative", height: "85vh", minHeight: 500, overflow: "hidden" }}>
-      {/* Background video */}
-      <video
-        ref={bgVideoRef}
-        muted
-        loop
-        playsInline
+      {/* Background poster */}
+      <img
+        src={featured.poster}
+        alt={featured.title}
         style={{
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
@@ -480,23 +433,6 @@ function Hero({ onPlay, t }) {
       {/* Gradient overlay */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg) 0%, #00000088 60%, #00000044 100%)" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 55%)" }} />
-
-      {/* Mute toggle */}
-      <button onClick={toggleMute} style={{
-        position: "absolute", bottom: 24, right: 24,
-        width: 40, height: 40, borderRadius: "50%",
-        background: "#000000aa", border: "1px solid #ffffff33",
-        color: "white", fontSize: 18, display: "flex",
-        alignItems: "center", justifyContent: "center",
-        backdropFilter: "blur(6px)", transition: "background 0.15s",
-        zIndex: 10,
-      }}
-        onMouseEnter={e => e.currentTarget.style.background = "#000000cc"}
-        onMouseLeave={e => e.currentTarget.style.background = "#000000aa"}
-        title={muted ? "Unmute" : "Mute"}
-      >
-        {muted ? "🔇" : "🔊"}
-      </button>
 
       {/* Content */}
       <div style={{ position: "absolute", bottom: "18%", left: 48, maxWidth: 520 }}>
