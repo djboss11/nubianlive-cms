@@ -207,6 +207,7 @@ const categories = [
       { id: 6, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
       { id: 7, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
       { id: 8, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
+      { id: 9, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
     ],
   },
   {
