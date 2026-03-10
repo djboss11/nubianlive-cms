@@ -2,6 +2,18 @@ import { useState, useEffect, useRef, useCallback, createContext, useContext } f
 import Hls from "hls.js";
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');`;
 
+// ── WINDOW WIDTH HOOK ──────────────────────────────────────────────────────────
+
+function useWindowWidth() {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const handler = () => setW(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return w;
+}
+
 // ── TRANSLATIONS ──────────────────────────────────────────────────────────────
 
 const LANGS = {
@@ -289,13 +301,14 @@ function LiveBadge() {
   );
 }
 
-function ContentCard({ item, size = "normal", onClick }) {
+function ContentCard({ item, onClick }) {
+  const w = useWindowWidth();
   const [hovered, setHovered] = useState(false);
   const { t } = useLang();
   const isLive = item.type === "LIVE";
-  // Portrait 3:4 dimensions
-  const w = size === "large" ? 200 : size === "small" ? 120 : 160;
-  const h = Math.round(w * (4 / 3));
+  const cardW = w < 768 ? 110 : 160;
+  const cardH = Math.round(cardW * (4 / 3));
+  const titleFontSize = w < 768 ? 10 : 12;
 
   return (
     <div
@@ -303,7 +316,7 @@ function ContentCard({ item, size = "normal", onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width: w, flexShrink: 0, cursor: "pointer",
+        width: cardW, flexShrink: 0, cursor: "pointer",
         transform: hovered ? "scale(1.06)" : "scale(1)",
         transition: "transform 0.2s ease",
         zIndex: hovered ? 10 : 1, position: "relative",
@@ -311,10 +324,10 @@ function ContentCard({ item, size = "normal", onClick }) {
     >
       {/* Poster thumbnail */}
       <div style={{
-        width: w, height: h,
+        width: cardW, height: cardH,
         background: `linear-gradient(160deg, #1a1a2e, #111)`,
         borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: size === "small" ? 32 : 48, border: "1px solid var(--border)",
+        fontSize: w < 768 ? 28 : 48, border: "1px solid var(--border)",
         position: "relative", overflow: "hidden",
       }}>
         {item.poster
@@ -327,7 +340,7 @@ function ContentCard({ item, size = "normal", onClick }) {
           position: "absolute", bottom: 0, left: 0, right: 0,
           padding: "28px 10px 10px",
           background: "linear-gradient(to top, #000d, transparent)",
-          fontSize: 12, fontWeight: 600,
+          fontSize: titleFontSize, fontWeight: 600,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>{item.title}</div>
 
@@ -359,7 +372,7 @@ function ContentCard({ item, size = "normal", onClick }) {
         <div style={{
           background: "var(--surface)", borderRadius: "0 0 8px 8px",
           padding: "10px 12px", border: "1px solid var(--border)", borderTop: "none",
-          position: "absolute", left: 0, right: 0, top: h - 1, zIndex: 20,
+          position: "absolute", left: 0, right: 0, top: cardH - 1, zIndex: 20,
           boxShadow: "0 8px 24px #000a",
         }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
@@ -383,33 +396,41 @@ function ContentCard({ item, size = "normal", onClick }) {
 }
 
 function ContentRow({ category, onSelect }) {
+  const w = useWindowWidth();
   const rowRef = useRef(null);
   const scroll = (dir) => {
     if (rowRef.current) rowRef.current.scrollBy({ left: dir * 400, behavior: "smooth" });
   };
+  const sidePad = w < 768 ? 16 : 48;
 
   return (
     <div style={{ marginBottom: 40 }}>
-      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: 48 }}>{category.name}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: sidePad }}>{category.name}</div>
       <div style={{ position: "relative" }}>
-        <button onClick={() => scroll(-1)} style={{
-          position: "absolute", left: 0, top: 0, bottom: 0, width: 40,
-          background: "linear-gradient(to right, var(--bg), transparent)",
-          color: "white", fontSize: 20, zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center",
-        }}>‹</button>
+        {w >= 768 && (
+          <button onClick={() => scroll(-1)} style={{
+            position: "absolute", left: 0, top: 0, bottom: 0, width: 40,
+            background: "linear-gradient(to right, var(--bg), transparent)",
+            color: "white", fontSize: 20, zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center",
+          }}>‹</button>
+        )}
         <div ref={rowRef} style={{
-          display: "flex", gap: 12, overflowX: "auto", paddingLeft: 48, paddingRight: 48,
+          display: "flex", gap: 12, overflowX: "auto",
+          paddingLeft: sidePad, paddingRight: sidePad,
           scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 80,
+          WebkitOverflowScrolling: "touch",
         }}>
           {category.items.map(item => (
             <ContentCard key={item.id} item={item} onClick={onSelect} />
           ))}
         </div>
-        <button onClick={() => scroll(1)} style={{
-          position: "absolute", right: 0, top: 0, bottom: 0, width: 40,
-          background: "linear-gradient(to left, var(--bg), transparent)",
-          color: "white", fontSize: 20, zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center",
-        }}>›</button>
+        {w >= 768 && (
+          <button onClick={() => scroll(1)} style={{
+            position: "absolute", right: 0, top: 0, bottom: 0, width: 40,
+            background: "linear-gradient(to left, var(--bg), transparent)",
+            color: "white", fontSize: 20, zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center",
+          }}>›</button>
+        )}
       </div>
     </div>
   );
@@ -418,8 +439,13 @@ function ContentRow({ category, onSelect }) {
 // ── HERO ──────────────────────────────────────────────────────────────────────
 
 function Hero({ onPlay, t }) {
+  const w = useWindowWidth();
+  const heroHeight = w < 768 ? "60vh" : "85vh";
+  const titleFontSize = w < 768 ? 36 : w < 1024 ? 56 : 72;
+  const sidePad = w < 768 ? 16 : 48;
+
   return (
-    <div style={{ position: "relative", height: "85vh", minHeight: 500, overflow: "hidden" }}>
+    <div style={{ position: "relative", height: heroHeight, minHeight: 320, overflow: "hidden" }}>
       {/* Background poster */}
       <img
         src={featured.poster}
@@ -436,27 +462,39 @@ function Hero({ onPlay, t }) {
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 55%)" }} />
 
       {/* Content */}
-      <div style={{ position: "absolute", bottom: "18%", left: 48, maxWidth: 520 }}>
+      <div style={{ position: "absolute", bottom: w < 768 ? "12%" : "18%", left: sidePad, maxWidth: w < 768 ? "calc(100% - 32px)" : 520 }}>
         <div style={{
           fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: "clamp(48px, 8vw, 80px)",
+          fontSize: titleFontSize,
           letterSpacing: 3, lineHeight: 1, marginBottom: 16,
           textShadow: "0 2px 20px #000a",
         }}>{featured.title}</div>
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-          <span style={{ color: "var(--green)", fontSize: 13, fontWeight: 600 }}>{featured.match} Match</span>
-          <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.year}</span>
-          <span style={{ fontSize: 11, border: "1px solid var(--text3)", color: "var(--text3)", padding: "1px 6px", borderRadius: 2 }}>{featured.rating}</span>
-          <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.duration}</span>
-          <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.genre}</span>
-        </div>
+        {/* Info badges — hidden on mobile */}
+        {w >= 768 && (
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+            <span style={{ color: "var(--green)", fontSize: 13, fontWeight: 600 }}>{featured.match} Match</span>
+            <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.year}</span>
+            <span style={{ fontSize: 11, border: "1px solid var(--text3)", color: "var(--text3)", padding: "1px 6px", borderRadius: 2 }}>{featured.rating}</span>
+            <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.duration}</span>
+            <span style={{ fontSize: 12, color: "var(--text2)" }}>{featured.genre}</span>
+          </div>
+        )}
 
-        <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 24, maxWidth: 440 }}>
-          {featured.description}
-        </div>
+        {/* Description — hidden on mobile */}
+        {w >= 768 && (
+          <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 24, maxWidth: 440 }}>
+            {featured.description}
+          </div>
+        )}
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{
+          display: "flex",
+          flexDirection: w < 768 ? "column" : "row",
+          alignItems: w < 768 ? "flex-start" : "center",
+          gap: 12,
+          marginTop: w < 768 ? 16 : 0,
+        }}>
           <button onClick={onPlay} style={{
             background: "white", color: "black",
             padding: "12px 28px", borderRadius: 6,
@@ -479,13 +517,20 @@ function Hero({ onPlay, t }) {
 // ── CONTINUE WATCHING ─────────────────────────────────────────────────────────
 
 function ContinueWatching({ onSelect, t }) {
+  const w = useWindowWidth();
+  const sidePad = w < 768 ? 16 : 48;
+
   return (
     <div style={{ marginBottom: 40, marginTop: -80, position: "relative", zIndex: 2 }}>
-      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: 48 }}>{t.continueWatching}</div>
-      <div style={{ display: "flex", gap: 10, paddingLeft: 48, paddingRight: 48, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8 }}>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: sidePad }}>{t.continueWatching}</div>
+      <div style={{
+        display: "flex", gap: 10, paddingLeft: sidePad, paddingRight: sidePad,
+        overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8,
+        WebkitOverflowScrolling: "touch",
+      }}>
         {continueWatching.map(item => (
-          <div key={item.id} onClick={() => onSelect(item)} style={{ width: 220, flexShrink: 0, cursor: "pointer" }}>
-            <div style={{ position: "relative", height: 124, background: "#1a1a1a", borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 6 }}>
+          <div key={item.id} onClick={() => onSelect(item)} style={{ width: w < 768 ? 160 : 220, flexShrink: 0, cursor: "pointer" }}>
+            <div style={{ position: "relative", height: w < 768 ? 90 : 124, background: "#1a1a1a", borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 6 }}>
               <span>{item.thumb}</span>
               {/* Progress bar */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "#333" }}>
@@ -512,35 +557,64 @@ function ContinueWatching({ onSelect, t }) {
 // ── LIVE TV ───────────────────────────────────────────────────────────────────
 
 function LiveTV({ t }) {
+  const w = useWindowWidth();
   const [activeChannel, setActiveChannel] = useState(channels[0]);
   const videoRef = useRef(null);
+  const isMobile = w < 768;
+  const sidePad = isMobile ? 16 : 48;
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !activeChannel.hlsUrl) return;
 
-    let hls;
+    let hlsInstance;
     if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(activeChannel.hlsUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      hlsInstance = new Hls();
+      hlsInstance.loadSource(activeChannel.hlsUrl);
+      hlsInstance.attachMedia(video);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = activeChannel.hlsUrl;
       video.play().catch(() => {});
     }
 
-    return () => { if (hls) hls.destroy(); };
+    return () => { if (hlsInstance) hlsInstance.destroy(); };
   }, [activeChannel]);
 
   return (
-    <div style={{ padding: "24px 48px" }}>
+    <div style={{ padding: `24px ${sidePad}px` }}>
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.liveTVTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.liveTVSubtitle}</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
+      {/* Mobile: channel tabs as horizontal scrolling row */}
+      {isMobile && (
+        <div style={{
+          display: "flex", overflowX: "auto", gap: 8, marginBottom: 16,
+          scrollbarWidth: "none", WebkitOverflowScrolling: "touch", paddingBottom: 4,
+        }}>
+          {channels.map(ch => (
+            <button key={ch.id} onClick={() => setActiveChannel(ch)} style={{
+              flexShrink: 0,
+              background: activeChannel.id === ch.id ? "var(--accent)" : "var(--surface)",
+              color: "white", borderRadius: 20, padding: "7px 16px", fontSize: 12,
+              border: activeChannel.id === ch.id ? "none" : "1px solid var(--border)",
+              fontWeight: activeChannel.id === ch.id ? 700 : 400,
+              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+            }}>
+              <span>{ch.thumb}</span>
+              <span>{ch.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        gap: 20,
+      }}>
         {/* Main player */}
-        <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
+        <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", flex: 1 }}>
           <div style={{ position: "relative", background: "#000" }}>
             {activeChannel.hlsUrl ? (
               <video
@@ -560,7 +634,7 @@ function LiveTV({ t }) {
               <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
             </div>
           </div>
-          <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <div>
               <div style={{ fontWeight: 600 }}>{activeChannel.name}</div>
               <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{activeChannel.current}</div>
@@ -572,25 +646,27 @@ function LiveTV({ t }) {
           </div>
         </div>
 
-        {/* Channel list */}
-        <div style={{ background: "var(--bg2)", borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>{t.allChannels}</div>
-          {channels.map(ch => (
-            <div key={ch.id} onClick={() => setActiveChannel(ch)} style={{
-              padding: "14px 20px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
-              background: activeChannel.id === ch.id ? "var(--surface)" : "transparent",
-              borderBottom: "1px solid var(--border)", transition: "background 0.15s",
-              borderLeft: activeChannel.id === ch.id ? "3px solid var(--accent)" : "3px solid transparent",
-            }}>
-              <span style={{ fontSize: 24 }}>{ch.thumb}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{ch.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.current}</div>
+        {/* Channel list — desktop only vertical sidebar */}
+        {!isMobile && (
+          <div style={{ width: 320, background: "var(--bg2)", borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>{t.allChannels}</div>
+            {channels.map(ch => (
+              <div key={ch.id} onClick={() => setActiveChannel(ch)} style={{
+                padding: "14px 20px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
+                background: activeChannel.id === ch.id ? "var(--surface)" : "transparent",
+                borderBottom: "1px solid var(--border)", transition: "background 0.15s",
+                borderLeft: activeChannel.id === ch.id ? "3px solid var(--accent)" : "3px solid transparent",
+              }}>
+                <span style={{ fontSize: 24 }}>{ch.thumb}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{ch.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.current}</div>
+                </div>
+                <LiveBadge />
               </div>
-              <LiveBadge />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -599,12 +675,16 @@ function LiveTV({ t }) {
 // ── PPV SECTION ───────────────────────────────────────────────────────────────
 
 function PPVSection({ t }) {
+  const w = useWindowWidth();
+  const sidePad = w < 768 ? 16 : 48;
+  const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "1fr 1fr 1fr";
+
   return (
-    <div style={{ padding: "24px 48px" }}>
+    <div style={{ padding: `24px ${sidePad}px` }}>
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.ppvTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.ppvSubtitle}</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 20 }}>
         {ppvEvents.map(ev => (
           <div key={ev.id} style={{ background: ev.gradient, borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)" }}>
             <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, position: "relative" }}>
@@ -637,12 +717,16 @@ function PPVSection({ t }) {
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 
 function SearchPanel({ query, onSelect, t }) {
+  const w = useWindowWidth();
+  const sidePad = w < 768 ? 16 : 48;
+  const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "repeat(3, 1fr)";
+
   const filtered = query.length > 1
     ? searchResults.filter(r => r.title.toLowerCase().includes(query.toLowerCase()))
     : searchResults;
 
   return (
-    <div style={{ padding: "24px 48px" }}>
+    <div style={{ padding: `24px ${sidePad}px` }}>
       {query.length > 1 && (
         <div style={{ fontSize: 14, color: "var(--text3)", marginBottom: 20 }}>
           {t.searchResults} <span style={{ color: "white", fontWeight: 600 }}>"{query}"</span>
@@ -653,7 +737,7 @@ function SearchPanel({ query, onSelect, t }) {
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>{t.popularSearches}</div>
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 12 }}>
         {filtered.map(item => (
           <div key={item.id} onClick={() => onSelect(item)} style={{
             background: "var(--bg2)", borderRadius: 8, overflow: "hidden",
@@ -679,6 +763,8 @@ function SearchPanel({ query, onSelect, t }) {
 // ── PLAYER MODAL ──────────────────────────────────────────────────────────────
 
 function PlayerModal({ item, onClose }) {
+  const w = useWindowWidth();
+  const isMobile = w < 768;
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -692,30 +778,52 @@ function PlayerModal({ item, onClose }) {
     if (!video || !item.hlsUrl) return;
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(item.hlsUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      return () => hls.destroy();
+      const hlsInstance = new Hls();
+      hlsInstance.loadSource(item.hlsUrl);
+      hlsInstance.attachMedia(video);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+      return () => hlsInstance.destroy();
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = item.hlsUrl;
       video.play();
     }
   }, [item]);
 
+  const modalStyle = isMobile
+    ? {
+        position: "fixed", inset: 0, borderRadius: 0,
+        width: "100vw", height: "100vh",
+        background: "var(--bg2)",
+        display: "flex", flexDirection: "column",
+        overflow: "hidden",
+      }
+    : {
+        width: "80vw", maxWidth: 900,
+        background: "var(--bg2)", borderRadius: 16,
+        overflow: "hidden", border: "1px solid var(--border)",
+      };
+
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#000e", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "80vw", maxWidth: 900, background: "var(--bg2)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
-        <div style={{ position: "relative", background: "#000" }}>
+    <div
+      style={{
+        position: "fixed", inset: 0, background: isMobile ? "#000" : "#000e",
+        zIndex: 1000, display: "flex",
+        alignItems: isMobile ? "flex-start" : "center",
+        justifyContent: "center",
+      }}
+      onClick={isMobile ? undefined : onClose}
+    >
+      <div onClick={e => e.stopPropagation()} style={modalStyle}>
+        <div style={{ position: "relative", background: "#000", flex: isMobile ? "none" : undefined }}>
           {item.hlsUrl ? (
             <video
               ref={videoRef}
               controls
               muted
-              style={{ width: "100%", maxHeight: 480, display: "block" }}
+              style={{ width: "100%", maxHeight: isMobile ? "55vh" : 480, display: "block" }}
             />
           ) : (
-            <div style={{ height: 480, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ height: isMobile ? "55vh" : 480, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 100, opacity: 0.3 }}>{item.thumb}</span>
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#ffffff22", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #ffffff44" }}>
@@ -734,49 +842,102 @@ function PlayerModal({ item, onClose }) {
     </div>
   );
 }
-  
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
 function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
+  const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { t } = useLang();
+  const isMobile = w < 768;
+
+  const navLinks = [
+    { id: "home", label: t.home },
+    { id: "live", label: t.liveTV },
+    { id: "ppv", label: t.ppv },
+    { id: "search", label: t.browse },
+  ];
+
+  const handleNavClick = (id) => {
+    setPage(id);
+    setMenuOpen(false);
+  };
 
   return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-      background: scrolled ? "var(--bg)" : "linear-gradient(to bottom, #000a, transparent)",
-      transition: "background 0.3s",
-      padding: "0 48px", height: 64,
-      display: "flex", alignItems: "center", gap: 32,
-      borderBottom: scrolled ? "1px solid var(--border)" : "none",
-    }}>
-      {/* Logo */}
-      <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
-  <img src="/logo.png" alt="Nubian Black Television" style={{ height: 36, width: "auto" }} />
-</div>
+    <>
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrolled ? "var(--bg)" : "linear-gradient(to bottom, #000a, transparent)",
+        transition: "background 0.3s",
+        padding: isMobile ? "0 16px" : "0 48px", height: 64,
+        display: "flex", alignItems: "center", gap: isMobile ? 0 : 32,
+        borderBottom: scrolled ? "1px solid var(--border)" : "none",
+      }}>
+        {/* Logo */}
+        <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0, flex: isMobile ? 1 : "none" }}>
+          <img src="/logo.png" alt="Nubian Black Television" style={{ height: 36, width: "auto" }} />
+        </div>
 
-      {/* Nav links */}
-      <div style={{ display: "flex", gap: 24, flex: 1 }}>
-        {[
-          { id: "home", label: t.home },
-          { id: "live", label: t.liveTV },
-          { id: "ppv", label: t.ppv },
-          { id: "search", label: t.browse },
-        ].map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)} style={{
-            background: "transparent", color: page === n.id ? "white" : "var(--text2)",
-            fontSize: 14, fontWeight: page === n.id ? 600 : 400,
-            transition: "color 0.15s", padding: 0,
-            borderBottom: page === n.id ? "2px solid var(--accent)" : "2px solid transparent",
-            paddingBottom: 2,
-          }}>{n.label}</button>
-        ))}
+        {/* Desktop: Nav links */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 24, flex: 1 }}>
+            {navLinks.map(n => (
+              <button key={n.id} onClick={() => setPage(n.id)} style={{
+                background: "transparent", color: page === n.id ? "white" : "var(--text2)",
+                fontSize: 14, fontWeight: page === n.id ? 600 : 400,
+                transition: "color 0.15s", padding: 0,
+                borderBottom: page === n.id ? "2px solid var(--accent)" : "2px solid transparent",
+                paddingBottom: 2,
+              }}>{n.label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop: Right controls */}
+        {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {showSearch ? (
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setPage("search"); }}
+                onBlur={() => { if (!searchQuery) setShowSearch(false); }}
+                placeholder={t.searchPlaceholder}
+                style={{
+                  background: "var(--surface)", border: "1px solid var(--border)",
+                  borderRadius: 6, padding: "7px 14px", color: "white", fontSize: 13,
+                  outline: "none", width: 220,
+                }}
+              />
+            ) : (
+              <button onClick={() => setShowSearch(true)} style={{ background: "transparent", color: "var(--text2)", fontSize: 18 }}>🔍</button>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => setPage("live")}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
+            </div>
+            <LanguageSwitcher />
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #ff6b35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>N</div>
+          </div>
+        )}
+
+        {/* Mobile: search + hamburger */}
+        {isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => { setShowSearch(s => !s); if (!showSearch) setMenuOpen(false); }} style={{ background: "transparent", color: "var(--text2)", fontSize: 18, padding: 4 }}>🔍</button>
+            <button onClick={() => { setMenuOpen(o => !o); setShowSearch(false); }} style={{ background: "transparent", color: "white", fontSize: 22, padding: 4, lineHeight: 1 }}>☰</button>
+          </div>
+        )}
       </div>
 
-      {/* Right controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {showSearch ? (
+      {/* Mobile: search bar below navbar */}
+      {isMobile && showSearch && (
+        <div style={{
+          position: "fixed", top: 64, left: 0, right: 0, zIndex: 99,
+          background: "var(--bg)", borderBottom: "1px solid var(--border)",
+          padding: "10px 16px",
+        }}>
           <input
             autoFocus
             value={searchQuery}
@@ -785,27 +946,47 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
             placeholder={t.searchPlaceholder}
             style={{
               background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: 6, padding: "7px 14px", color: "white", fontSize: 13,
-              outline: "none", width: 220,
+              borderRadius: 6, padding: "10px 14px", color: "white", fontSize: 14,
+              outline: "none", width: "100%",
             }}
           />
-        ) : (
-          <button onClick={() => setShowSearch(true)} style={{ background: "transparent", color: "var(--text2)", fontSize: 18 }}>🔍</button>
-        )}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => setPage("live")}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
-          <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
         </div>
-        <LanguageSwitcher />
-        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #ff6b35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>N</div>
-      </div>
-    </div>
+      )}
+
+      {/* Mobile: dropdown menu */}
+      {isMobile && menuOpen && (
+        <div style={{
+          position: "fixed", top: 64, left: 0, right: 0, zIndex: 99,
+          background: "var(--bg)", borderBottom: "1px solid var(--border)",
+          padding: "8px 0",
+        }}>
+          {navLinks.map(n => (
+            <button key={n.id} onClick={() => handleNavClick(n.id)} style={{
+              display: "block", width: "100%", textAlign: "left",
+              background: page === n.id ? "var(--surface)" : "transparent",
+              color: page === n.id ? "white" : "var(--text2)",
+              fontSize: 15, fontWeight: page === n.id ? 600 : 400,
+              padding: "14px 20px",
+              borderLeft: page === n.id ? "3px solid var(--accent)" : "3px solid transparent",
+            }}>{n.label}</button>
+          ))}
+          <div style={{ borderTop: "1px solid var(--border)", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => { setPage("live"); setMenuOpen(false); }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
+            </div>
+            <LanguageSwitcher />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
+  const w = useWindowWidth();
   const [page, setPage] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
@@ -823,6 +1004,9 @@ export default function NubianLiveViewer() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const isMobile = w < 768;
+  const footerPad = isMobile ? 24 : 48;
 
   return (
     <LangContext.Provider value={{ lang, t, setLang }}>
@@ -869,10 +1053,25 @@ export default function NubianLiveViewer() {
       </div>
 
       {/* Footer */}
-      <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: "40px 48px", marginTop: 60 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: `40px ${footerPad}px`, marginTop: 60 }}>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: isMobile ? "center" : "space-between",
+          alignItems: "center",
+          gap: isMobile ? 24 : 0,
+          marginBottom: 24,
+          textAlign: isMobile ? "center" : "left",
+        }}>
           <img src="/logo.png" alt="Nubian Black Television" style={{ height: 32, width: "auto" }} />
-          <div style={{ display: "flex", gap: 24, fontSize: 13, color: "var(--text3)" }}>
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: isMobile ? "center" : "flex-end",
+            gap: isMobile ? 16 : 24,
+            fontSize: 13,
+            color: "var(--text3)",
+          }}>
             {[t.about, t.help, t.privacy, t.terms, t.contact].map(l => (
               <span key={l} style={{ cursor: "pointer", transition: "color 0.15s" }}
                 onMouseEnter={e => e.target.style.color = "white"}
@@ -881,7 +1080,7 @@ export default function NubianLiveViewer() {
             ))}
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text3)" }}>© 2026 Nubian Live. {t.rights}</div>
+        <div style={{ fontSize: 12, color: "var(--text3)", textAlign: isMobile ? "center" : "left" }}>© 2026 Nubian Live. {t.rights}</div>
       </div>
 
       {/* Player modal */}
