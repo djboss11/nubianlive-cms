@@ -620,9 +620,18 @@ function RadioVisualizer({ muted }) {
 
 const SC_EMBED_URL = "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/djbossforever/sets/r-b-and-soul&color=%23ff0000&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false";
 
-function LiveTV({ t }) {
+function LiveTV({ t, initialChannelId }) {
   const w = useWindowWidth();
-  const [activeChannel, setActiveChannel] = useState(channels[0]);
+  const [activeChannel, setActiveChannel] = useState(
+    () => (initialChannelId ? channels.find(c => c.id === initialChannelId) : null) || channels[0]
+  );
+
+  useEffect(() => {
+    if (initialChannelId) {
+      const ch = channels.find(c => c.id === initialChannelId);
+      if (ch) setActiveChannel(ch);
+    }
+  }, [initialChannelId]);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const [muted, setMuted] = useState(false);
@@ -1429,12 +1438,23 @@ export default function NubianLiveViewer() {
   const [scrolled, setScrolled] = useState(false);
   const [playing, setPlaying] = useState(null);
   const [lang, setLang] = useState("en");
+  const [liveChannelId, setLiveChannelId] = useState(null);
   const t = T[lang];
 
   const navigate = useCallback((p) => {
     setPage(p);
     setPlaying(null);
   }, []);
+
+  const handleContentSelect = useCallback((item) => {
+    if (item.type === "LIVE") {
+      const ch = channels.find(c => c.name === item.title);
+      setLiveChannelId(ch ? ch.id : channels[0].id);
+      navigate("live");
+    } else {
+      setPlaying(item);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -1465,14 +1485,14 @@ export default function NubianLiveViewer() {
             <Hero onPlay={() => setPlaying(featured)} t={t} />
             <ContinueWatching onSelect={setPlaying} t={t} />
             {categories.map(cat => (
-              <ContentRow key={cat.name} category={cat} onSelect={setPlaying} t={t} />
+              <ContentRow key={cat.name} category={cat} onSelect={handleContentSelect} t={t} />
             ))}
           </>
         )}
 
         {page === "live" && (
           <div style={{ paddingTop: 80 }}>
-            <LiveTV t={t} />
+            <LiveTV t={t} initialChannelId={liveChannelId} />
           </div>
         )}
 
