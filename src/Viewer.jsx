@@ -278,7 +278,7 @@ const channels = [
   { id: 1, name: "Eastern", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
   { id: 2, name: "Pacific", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
   { id: 3, name: "Africa/Europe", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
-  { id: 4, name: "Nubian Radio", current: "Cartoon Hour", next: "Story Time", status: "live", thumb: "🎙️" },
+  { id: 4, name: "Nubian Radio", current: "R&B Winter 2025", next: "Coming Up", status: "live", thumb: "🎙️", audioUrl: "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev/R%26B%20Winter%202025.mp3" },
 ];
 
 const searchResults = [
@@ -601,37 +601,95 @@ function ContinueWatching({ onSelect, t }) {
 
 // ── LIVE TV ───────────────────────────────────────────────────────────────────
 
+function RadioVisualizer({ muted }) {
+  const bars = [3, 5, 8, 6, 4, 7, 5, 9, 6, 4, 8, 5, 7, 4, 6];
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 48 }}>
+      {bars.map((h, i) => (
+        <div key={i} style={{
+          width: 4, borderRadius: 2,
+          background: muted ? "var(--text3)" : "var(--accent)",
+          height: muted ? 8 : undefined,
+          animation: muted ? "none" : `radioBar${i % 4} ${0.6 + (i % 5) * 0.15}s ease-in-out infinite alternate`,
+          minHeight: 4,
+        }} />
+      ))}
+    </div>
+  );
+}
+
 function LiveTV({ t }) {
   const w = useWindowWidth();
   const [activeChannel, setActiveChannel] = useState(channels[0]);
   const videoRef = useRef(null);
+  const audioRef = useRef(null);
+  const hlsRef = useRef(null);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.8);
   const isMobile = w < 768;
   const sidePad = isMobile ? 16 : 48;
+  const isRadio = !!activeChannel.audioUrl;
 
+  // HLS video effect
   useEffect(() => {
+    if (isRadio) return;
     const video = videoRef.current;
     if (!video || !activeChannel.hlsUrl) return;
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
-    let hlsInstance;
+    let h;
     if (Hls.isSupported()) {
-      hlsInstance = new Hls();
-      hlsInstance.loadSource(activeChannel.hlsUrl);
-      hlsInstance.attachMedia(video);
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      h = new Hls();
+      hlsRef.current = h;
+      h.loadSource(activeChannel.hlsUrl);
+      h.attachMedia(video);
+      h.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = activeChannel.hlsUrl;
       video.play().catch(() => {});
     }
+    return () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
+  }, [activeChannel, isRadio]);
 
-    return () => { if (hlsInstance) hlsInstance.destroy(); };
-  }, [activeChannel]);
+  // Audio effect for radio
+  useEffect(() => {
+    if (!isRadio) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = activeChannel.audioUrl;
+    audio.volume = volume;
+    audio.muted = muted;
+    audio.loop = true;
+    audio.play().catch(() => {});
+    return () => { audio.pause(); audio.src = ""; };
+  }, [activeChannel, isRadio]);
+
+  // Sync mute/volume to active media
+  useEffect(() => {
+    if (isRadio && audioRef.current) {
+      audioRef.current.muted = muted;
+      audioRef.current.volume = volume;
+    } else if (!isRadio && videoRef.current) {
+      videoRef.current.muted = muted;
+      videoRef.current.volume = volume;
+    }
+  }, [muted, volume, isRadio]);
+
+  const radioBarKeyframes = `
+    @keyframes radioBar0 { from { height: 8px } to { height: 36px } }
+    @keyframes radioBar1 { from { height: 12px } to { height: 44px } }
+    @keyframes radioBar2 { from { height: 6px } to { height: 28px } }
+    @keyframes radioBar3 { from { height: 10px } to { height: 40px } }
+  `;
 
   return (
     <div style={{ padding: `24px ${sidePad}px` }}>
+      <style>{radioBarKeyframes}</style>
+      <audio ref={audioRef} style={{ display: "none" }} />
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.liveTVTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.liveTVSubtitle}</div>
 
-      {/* Mobile: channel tabs as horizontal scrolling row */}
+      {/* Mobile: channel tabs */}
       {isMobile && (
         <div style={{
           display: "flex", overflowX: "auto", gap: 8, marginBottom: 16,
@@ -646,52 +704,102 @@ function LiveTV({ t }) {
               fontWeight: activeChannel.id === ch.id ? 700 : 400,
               display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
             }}>
-              <span>{ch.thumb}</span>
-              <span>{ch.name}</span>
+              <span>{ch.thumb}</span><span>{ch.name}</span>
             </button>
           ))}
         </div>
       )}
 
-      <div style={{
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        gap: 20,
-      }}>
-        {/* Main player */}
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20 }}>
+        {/* Main player area */}
         <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", flex: 1 }}>
           <div style={{ position: "relative", background: "#000" }}>
-            {activeChannel.hlsUrl ? (
-              <video
-                ref={videoRef}
-                controls
-                muted
-                style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
-              />
-            ) : (
-              <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
+            {isRadio ? (
+              /* Radio UI */
+              <div style={{
+                aspectRatio: "16/9", display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 24,
+                background: "radial-gradient(ellipse at center, #1a0a1a 0%, #0a0a0a 70%)",
+                position: "relative", overflow: "hidden",
+              }}>
+                {/* Background glow */}
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 50%, #e5091422 0%, transparent 60%)", pointerEvents: "none" }} />
+
+                {/* Station icon */}
+                <div style={{
+                  width: 100, height: 100, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #1a1a2e, #2a1a2a)",
+                  border: "2px solid var(--accent)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 44,
+                  boxShadow: muted ? "none" : "0 0 40px #e5091444",
+                }}>🎙️</div>
+
+                {/* Station name */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 3 }}>Nubian Radio</div>
+                  <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>● NOW PLAYING</div>
+                  <div style={{ fontSize: 14, color: "var(--text2)", marginTop: 6 }}>{activeChannel.current}</div>
+                </div>
+
+                {/* Animated bars */}
+                <RadioVisualizer muted={muted} />
+
+                {/* Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <button onClick={() => setMuted(m => !m)} style={{
+                    background: "var(--surface)", border: "1px solid var(--border)",
+                    color: "white", borderRadius: "50%", width: 44, height: 44,
+                    fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{muted ? "🔇" : "🔊"}</button>
+                  <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
+                    onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
+                    style={{ width: 120, accentColor: "var(--accent)" }}
+                  />
+                </div>
               </div>
+            ) : (
+              /* Video player */
+              <>
+                {activeChannel.hlsUrl ? (
+                  <video
+                    ref={videoRef}
+                    muted={muted}
+                    style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
+                  />
+                ) : (
+                  <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
+                  </div>
+                )}
+                <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
+                <div style={{ position: "absolute", bottom: 48, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
+                  <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
+                  <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
+                </div>
+              </>
             )}
-            <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-            <div style={{ position: "absolute", bottom: activeChannel.hlsUrl ? 48 : 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
-              <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
-              <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
-            </div>
           </div>
-          <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-            <div>
-              <div style={{ fontWeight: 600 }}>{activeChannel.name}</div>
-              <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{activeChannel.current}</div>
+
+          {!isRadio && (
+            <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{activeChannel.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{activeChannel.current}</div>
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button onClick={() => setMuted(m => !m)} style={{ background: "var(--surface2)", color: "white", borderRadius: 6, padding: "7px 12px", fontSize: 14, border: "1px solid var(--border)" }}>{muted ? "🔇" : "🔊"}</button>
+                <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
+                  onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
+                  style={{ width: 80, accentColor: "var(--accent)" }}
+                />
+                <button style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600 }}>📺 {t.cast}</button>
+              </div>
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ background: "var(--surface2)", color: "white", borderRadius: 6, padding: "7px 14px", fontSize: 12, border: "1px solid var(--border)" }}>⛶ {t.fullscreen}</button>
-              <button style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600 }}>📺 {t.cast}</button>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Channel list — desktop only vertical sidebar */}
+        {/* Channel list — desktop sidebar */}
         {!isMobile && (
           <div style={{ width: 320, background: "var(--bg2)", borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", flexShrink: 0 }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", fontSize: 13, fontWeight: 600, color: "var(--text2)" }}>{t.allChannels}</div>
@@ -701,7 +809,10 @@ function LiveTV({ t }) {
                 background: activeChannel.id === ch.id ? "var(--surface)" : "transparent",
                 borderBottom: "1px solid var(--border)", transition: "background 0.15s",
                 borderLeft: activeChannel.id === ch.id ? "3px solid var(--accent)" : "3px solid transparent",
-              }}>
+              }}
+                onMouseEnter={e => { if (activeChannel.id !== ch.id) e.currentTarget.style.background = "var(--surface2)"; }}
+                onMouseLeave={e => { if (activeChannel.id !== ch.id) e.currentTarget.style.background = "transparent"; }}
+              >
                 <span style={{ fontSize: 24 }}>{ch.thumb}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{ch.name}</div>
