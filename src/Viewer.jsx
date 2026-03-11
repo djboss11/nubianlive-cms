@@ -225,10 +225,10 @@ const categories = [
   {
     name: "Live Now",
     items: [
-      { id: 10, title: "City Night Jazz", thumb: "🎵", type: "LIVE", viewers: "14.2K", tag: "LIVE" },
-      { id: 11, title: "Sports 24", thumb: "⚽", type: "LIVE", viewers: "9.8K", tag: "LIVE" },
-      { id: 12, title: "Music Vibes", thumb: "🎶", type: "LIVE", viewers: "2.3K", tag: "LIVE" },
-      { id: 13, title: "Morning Brief", thumb: "📡", type: "LIVE", viewers: "5.1K", tag: "LIVE" },
+      { id: 10, title: "Eastern", thumb: "📺", type: "LIVE", viewers: "14.2K", tag: "LIVE" },
+      { id: 11, title: "Pacific", thumb: "⚽", type: "LIVE", viewers: "9.8K", tag: "LIVE" },
+      { id: 12, title: "Africa/Europe", thumb: "🎵", type: "LIVE", viewers: "2.3K", tag: "LIVE" },
+      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", viewers: "5.1K", tag: "LIVE" },
     ],
   },
   {
