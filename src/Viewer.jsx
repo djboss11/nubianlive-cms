@@ -188,16 +188,16 @@ const poster = (file) => `${R2}/${file}`;
 
 const featured = {
   id: 100,
-  title: "RUTLAND MANOR",
-  hlsUrl: hls("a90f760613916b84d22e7de55e7c2404"),
+  title: "WELCOME TO NUBIAN TELEVISION",
+  hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8",
   poster: poster("rutland-manor.png"),
-  description: "A group of ambitious influencers accept an invite to a luxurious manor for a career-making social event. Survival is the only trend worth chasing.",
-  genre: "Movie",
-  year: 2025,
-  rating: "TV-MA",
-  duration: "1h 30m",
-  match: "98%",
-  thumb: "🏰",
+  description: "The home of Black culture, stories, and entertainment. Stream original series, documentaries, live TV, and exclusive events — all in one place.",
+  genre: "Platform",
+  year: 2026,
+  rating: "ALL",
+  duration: null,
+  match: null,
+  thumb: "📺",
 };
 
 const continueWatching = [
