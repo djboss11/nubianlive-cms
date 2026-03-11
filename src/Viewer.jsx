@@ -278,7 +278,7 @@ const channels = [
   { id: 1, name: "Eastern", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
   { id: 2, name: "Pacific", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
   { id: 3, name: "Africa/Europe", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
-  { id: 4, name: "Nubian Radio", current: "R&B Winter 2025", next: "Coming Up", status: "live", thumb: "🎙️", audioUrl: "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev/nubian-radio.mp3" },
+  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
 ];
 
 const searchResults = [
@@ -618,26 +618,23 @@ function RadioVisualizer({ muted }) {
   );
 }
 
+const SC_EMBED_URL = "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/djbossforever/sets/r-b-and-soul&color=%23ff0000&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false";
+
 function LiveTV({ t }) {
   const w = useWindowWidth();
   const [activeChannel, setActiveChannel] = useState(channels[0]);
   const videoRef = useRef(null);
-  const audioRef = useRef(null);
   const hlsRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [radioPlaying, setRadioPlaying] = useState(false);
   const isMobile = w < 768;
   const sidePad = isMobile ? 16 : 48;
-  const isRadio = !!activeChannel.audioUrl;
+  const isRadio = !!activeChannel.isRadio;
 
-  // Stop radio when switching away from Nubian Radio
+  // Reset radio state when switching away
   useEffect(() => {
-    if (!isRadio) {
-      const audio = audioRef.current;
-      if (audio) { audio.pause(); audio.src = ""; }
-      setRadioPlaying(false);
-    }
+    if (!isRadio) setRadioPlaying(false);
   }, [isRadio]);
 
   // HLS video effect
@@ -661,22 +658,9 @@ function LiveTV({ t }) {
     return () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
   }, [activeChannel, isRadio]);
 
-  const startRadio = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.src = activeChannel.audioUrl;
-    audio.volume = volume;
-    audio.muted = muted;
-    audio.loop = true;
-    audio.play().then(() => setRadioPlaying(true)).catch(() => {});
-  };
-
-  // Sync mute/volume to active media
+  // Sync mute/volume to video
   useEffect(() => {
-    if (isRadio && audioRef.current) {
-      audioRef.current.muted = muted;
-      audioRef.current.volume = volume;
-    } else if (!isRadio && videoRef.current) {
+    if (!isRadio && videoRef.current) {
       videoRef.current.muted = muted;
       videoRef.current.volume = volume;
     }
@@ -692,7 +676,17 @@ function LiveTV({ t }) {
   return (
     <div style={{ padding: `24px ${sidePad}px` }}>
       <style>{radioBarKeyframes}</style>
-      <audio ref={audioRef} style={{ display: "none" }} />
+
+      {/* Hidden SoundCloud iframe — only mounted when radio is playing */}
+      {isRadio && radioPlaying && (
+        <iframe
+          title="Nubian Radio"
+          src={SC_EMBED_URL}
+          allow="autoplay"
+          style={{ width: 0, height: 0, border: 0, position: "absolute", pointerEvents: "none" }}
+        />
+      )}
+
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.liveTVTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.liveTVSubtitle}</div>
 
@@ -739,7 +733,7 @@ function LiveTV({ t }) {
                   border: "2px solid var(--accent)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 44,
-                  boxShadow: muted ? "none" : "0 0 40px #e5091444",
+                  boxShadow: radioPlaying ? "0 0 40px #e5091444" : "none",
                 }}>🎙️</div>
 
                 {/* Station name */}
@@ -753,9 +747,17 @@ function LiveTV({ t }) {
 
                 {/* Play button or animated bars */}
                 {radioPlaying ? (
-                  <RadioVisualizer muted={muted} />
+                  <>
+                    <RadioVisualizer muted={false} />
+                    <button onClick={() => setRadioPlaying(false)} style={{
+                      background: "var(--surface)", border: "1px solid var(--border)",
+                      color: "var(--text2)", borderRadius: "50%", width: 44, height: 44,
+                      fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer",
+                    }}>⏹</button>
+                  </>
                 ) : (
-                  <button onClick={startRadio} style={{
+                  <button onClick={() => setRadioPlaying(true)} style={{
                     width: 72, height: 72, borderRadius: "50%",
                     background: "var(--accent)", border: "none",
                     color: "white", fontSize: 28,
@@ -766,26 +768,6 @@ function LiveTV({ t }) {
                     onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = "0 0 48px #e5091488"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 32px #e5091466"; }}
                   >▶</button>
-                )}
-
-                {/* Controls — only show when playing */}
-                {radioPlaying && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <button onClick={() => setMuted(m => !m)} style={{
-                      background: "var(--surface)", border: "1px solid var(--border)",
-                      color: "white", borderRadius: "50%", width: 44, height: 44,
-                      fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>{muted ? "🔇" : "🔊"}</button>
-                    <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
-                      onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
-                      style={{ width: 120, accentColor: "var(--accent)" }}
-                    />
-                    <button onClick={() => { audioRef.current?.pause(); setRadioPlaying(false); }} style={{
-                      background: "var(--surface)", border: "1px solid var(--border)",
-                      color: "var(--text2)", borderRadius: "50%", width: 44, height: 44,
-                      fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>⏸</button>
-                  </div>
                 )}
               </div>
             ) : (
