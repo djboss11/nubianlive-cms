@@ -278,7 +278,7 @@ const channels = [
   { id: 1, name: "Eastern", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
   { id: 2, name: "Pacific", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
   { id: 3, name: "Africa/Europe", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
-  { id: 4, name: "Nubian Radio", current: "R&B Winter 2025", next: "Coming Up", status: "live", thumb: "🎙️", audioUrl: "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev/R%26B%20Winter%202025.mp3" },
+  { id: 4, name: "Nubian Radio", current: "R&B Winter 2025", next: "Coming Up", status: "live", thumb: "🎙️", audioUrl: "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev/nubian-radio.mp3" },
 ];
 
 const searchResults = [
