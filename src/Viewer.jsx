@@ -748,7 +748,7 @@ function LiveTV({ t }) {
                   <div style={{ fontSize: 13, color: radioPlaying ? "var(--accent)" : "var(--text3)", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>
                     {radioPlaying ? "● NOW PLAYING" : "● READY TO PLAY"}
                   </div>
-                  <div style={{ fontSize: 14, color: "var(--text2)", marginTop: 6 }}>{activeChannel.current}</div>
+                  <div style={{ fontSize: 14, color: "var(--text2)", marginTop: 6 }}>Nubian Radio Live</div>
                 </div>
 
                 {/* Play button or animated bars */}
