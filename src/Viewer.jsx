@@ -689,10 +689,32 @@ function LiveTV({ t, initialChannelId }) {
       {/* Hidden SoundCloud iframe — only mounted when radio is playing */}
       {isRadio && radioPlaying && (
         <iframe
+          id="sc-radio-player"
           title="Nubian Radio"
           src={SC_EMBED_URL}
           allow="autoplay"
           style={{ width: 0, height: 0, border: 0, position: "absolute", pointerEvents: "none" }}
+          onLoad={() => {
+            const loadApi = () => {
+              const widget = window.SC.Widget(document.getElementById("sc-radio-player"));
+              widget.bind(window.SC.Widget.Events.READY, () => {
+                widget.getDuration(totalMs => {
+                  if (!totalMs) return;
+                  const totalSec = totalMs / 1000;
+                  const offsetSec = (Date.now() / 1000) % totalSec;
+                  widget.seekTo(offsetSec * 1000);
+                });
+              });
+            };
+            if (window.SC && window.SC.Widget) {
+              loadApi();
+            } else {
+              const script = document.createElement("script");
+              script.src = "https://w.soundcloud.com/player/api.js";
+              script.onload = loadApi;
+              document.head.appendChild(script);
+            }
+          }}
         />
       )}
 
