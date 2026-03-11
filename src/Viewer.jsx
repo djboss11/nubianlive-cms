@@ -438,18 +438,47 @@ function ContentRow({ category, onSelect }) {
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 
+const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8";
+
 function Hero({ onPlay, t }) {
   const w = useWindowWidth();
   const heroHeight = w < 768 ? "60vh" : "85vh";
   const titleFontSize = w < 768 ? 36 : w < 1024 ? 56 : 72;
   const sidePad = w < 768 ? 16 : 48;
+  const bgVideoRef = useRef(null);
+  const bgHlsRef = useRef(null);
+  const [muted, setMuted] = useState(true);
+
+  useEffect(() => {
+    const video = bgVideoRef.current;
+    if (!video) return;
+    if (Hls.isSupported()) {
+      const h = new Hls();
+      bgHlsRef.current = h;
+      h.loadSource(HERO_HLS_URL);
+      h.attachMedia(video);
+      h.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+      });
+      video.addEventListener("ended", () => { video.currentTime = 0; video.play().catch(() => {}); });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = HERO_HLS_URL;
+      video.play().catch(() => {});
+    }
+    return () => { bgHlsRef.current?.destroy(); };
+  }, []);
+
+  useEffect(() => {
+    if (bgVideoRef.current) bgVideoRef.current.muted = muted;
+  }, [muted]);
 
   return (
     <div style={{ position: "relative", height: heroHeight, minHeight: 320, overflow: "hidden" }}>
-      {/* Background poster */}
-      <img
-        src={featured.poster}
-        alt={featured.title}
+      {/* Background HLS video */}
+      <video
+        ref={bgVideoRef}
+        muted
+        playsInline
         style={{
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
@@ -510,6 +539,22 @@ function Hero({ onPlay, t }) {
           }}>ℹ {t.moreInfo}</button>
         </div>
       </div>
+
+      {/* Mute/unmute button — bottom right */}
+      <button
+        onClick={() => setMuted(m => !m)}
+        style={{
+          position: "absolute", bottom: 20, right: 20,
+          background: "#00000066", border: "1px solid #ffffff33",
+          color: "white", borderRadius: "50%",
+          width: 40, height: 40, fontSize: 18,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)", transition: "background 0.2s",
+          zIndex: 10,
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = "#000000aa"}
+        onMouseLeave={e => e.currentTarget.style.background = "#00000066"}
+      >{muted ? "🔇" : "🔊"}</button>
     </div>
   );
 }
