@@ -1047,7 +1047,7 @@ function PlayerModal({ item, onClose }) {
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
-function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
+function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick }) {
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1058,12 +1058,18 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled }) {
     { id: "home", label: t.home },
     { id: "live", label: t.liveTV },
     { id: "ppv", label: t.ppv },
+    { id: "radio", label: "Nubian Radio" },
     { id: "search", label: t.browse },
   ];
 
   const handleNavClick = (id) => {
-    setPage(id);
-    setMenuOpen(false);
+    if (id === "radio") {
+      onRadioClick && onRadioClick();
+      setMenuOpen(false);
+    } else {
+      setPage(id);
+      setMenuOpen(false);
+    }
   };
 
   return (
@@ -1502,6 +1508,10 @@ export default function NubianLiveViewer() {
         page={page} setPage={navigate}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
         scrolled={scrolled}
+        onRadioClick={() => {
+          setLiveChannelId(channels.find(c => c.isRadio)?.id ?? 4);
+          navigate("live");
+        }}
       />
 
       <div style={{ minHeight: "100vh" }}>
