@@ -626,9 +626,19 @@ function LiveTV({ t }) {
   const hlsRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.8);
+  const [radioPlaying, setRadioPlaying] = useState(false);
   const isMobile = w < 768;
   const sidePad = isMobile ? 16 : 48;
   const isRadio = !!activeChannel.audioUrl;
+
+  // Stop radio when switching away from Nubian Radio
+  useEffect(() => {
+    if (!isRadio) {
+      const audio = audioRef.current;
+      if (audio) { audio.pause(); audio.src = ""; }
+      setRadioPlaying(false);
+    }
+  }, [isRadio]);
 
   // HLS video effect
   useEffect(() => {
@@ -651,18 +661,15 @@ function LiveTV({ t }) {
     return () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
   }, [activeChannel, isRadio]);
 
-  // Audio effect for radio
-  useEffect(() => {
-    if (!isRadio) return;
+  const startRadio = () => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.src = activeChannel.audioUrl;
     audio.volume = volume;
     audio.muted = muted;
     audio.loop = true;
-    audio.play().catch(() => {});
-    return () => { audio.pause(); audio.src = ""; };
-  }, [activeChannel, isRadio]);
+    audio.play().then(() => setRadioPlaying(true)).catch(() => {});
+  };
 
   // Sync mute/volume to active media
   useEffect(() => {
@@ -738,25 +745,48 @@ function LiveTV({ t }) {
                 {/* Station name */}
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 3 }}>Nubian Radio</div>
-                  <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>● NOW PLAYING</div>
+                  <div style={{ fontSize: 13, color: radioPlaying ? "var(--accent)" : "var(--text3)", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>
+                    {radioPlaying ? "● NOW PLAYING" : "● READY TO PLAY"}
+                  </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", marginTop: 6 }}>{activeChannel.current}</div>
                 </div>
 
-                {/* Animated bars */}
-                <RadioVisualizer muted={muted} />
+                {/* Play button or animated bars */}
+                {radioPlaying ? (
+                  <RadioVisualizer muted={muted} />
+                ) : (
+                  <button onClick={startRadio} style={{
+                    width: 72, height: 72, borderRadius: "50%",
+                    background: "var(--accent)", border: "none",
+                    color: "white", fontSize: 28,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", boxShadow: "0 0 32px #e5091466",
+                    transition: "transform 0.15s, box-shadow 0.15s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = "0 0 48px #e5091488"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 32px #e5091466"; }}
+                  >▶</button>
+                )}
 
-                {/* Controls */}
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <button onClick={() => setMuted(m => !m)} style={{
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    color: "white", borderRadius: "50%", width: 44, height: 44,
-                    fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>{muted ? "🔇" : "🔊"}</button>
-                  <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
-                    onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
-                    style={{ width: 120, accentColor: "var(--accent)" }}
-                  />
-                </div>
+                {/* Controls — only show when playing */}
+                {radioPlaying && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <button onClick={() => setMuted(m => !m)} style={{
+                      background: "var(--surface)", border: "1px solid var(--border)",
+                      color: "white", borderRadius: "50%", width: 44, height: 44,
+                      fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>{muted ? "🔇" : "🔊"}</button>
+                    <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
+                      onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
+                      style={{ width: 120, accentColor: "var(--accent)" }}
+                    />
+                    <button onClick={() => { audioRef.current?.pause(); setRadioPlaying(false); }} style={{
+                      background: "var(--surface)", border: "1px solid var(--border)",
+                      color: "var(--text2)", borderRadius: "50%", width: 44, height: 44,
+                      fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>⏸</button>
+                  </div>
+                )}
               </div>
             ) : (
               /* Video player */
