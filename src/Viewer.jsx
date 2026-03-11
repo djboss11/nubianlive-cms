@@ -686,37 +686,7 @@ function LiveTV({ t, initialChannelId }) {
     <div style={{ padding: `24px ${sidePad}px` }}>
       <style>{radioBarKeyframes}</style>
 
-      {/* Hidden SoundCloud iframe — only mounted when radio is playing */}
-      {isRadio && radioPlaying && (
-        <iframe
-          id="sc-radio-player"
-          title="Nubian Radio"
-          src={SC_EMBED_URL}
-          allow="autoplay"
-          style={{ width: 0, height: 0, border: 0, position: "absolute", pointerEvents: "none" }}
-          onLoad={() => {
-            const loadApi = () => {
-              const widget = window.SC.Widget(document.getElementById("sc-radio-player"));
-              widget.bind(window.SC.Widget.Events.READY, () => {
-                widget.getDuration(totalMs => {
-                  if (!totalMs) return;
-                  const totalSec = totalMs / 1000;
-                  const offsetSec = (Date.now() / 1000) % totalSec;
-                  widget.seekTo(offsetSec * 1000);
-                });
-              });
-            };
-            if (window.SC && window.SC.Widget) {
-              loadApi();
-            } else {
-              const script = document.createElement("script");
-              script.src = "https://w.soundcloud.com/player/api.js";
-              script.onload = loadApi;
-              document.head.appendChild(script);
-            }
-          }}
-        />
-      )}
+{/* SoundCloud iframe — rendered inside radio UI when playing */}
 
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.liveTVTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.liveTVSubtitle}</div>
@@ -749,10 +719,14 @@ function LiveTV({ t, initialChannelId }) {
             {isRadio ? (
               /* Radio UI */
               <div style={{
-                aspectRatio: "16/9", display: "flex", flexDirection: "column",
+                minHeight: radioPlaying ? "calc(9/16 * 100% + 166px)" : undefined,
+                aspectRatio: radioPlaying ? undefined : "16/9",
+                display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: 24,
                 background: "radial-gradient(ellipse at center, #1a0a1a 0%, #0a0a0a 70%)",
                 position: "relative", overflow: "hidden",
+                paddingBottom: radioPlaying ? "182px" : 0,
+                paddingTop: 32,
               }}>
                 {/* Background glow */}
                 <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 50%, #e5091422 0%, transparent 60%)", pointerEvents: "none" }} />
@@ -799,6 +773,40 @@ function LiveTV({ t, initialChannelId }) {
                     onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = "0 0 48px #e5091488"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 32px #e5091466"; }}
                   >▶</button>
+                )}
+
+                {/* SoundCloud player — always visible when playing so mobile can interact */}
+                {radioPlaying && (
+                  <div style={{ width: "100%", padding: "0 0 16px", position: "absolute", bottom: 0, left: 0 }}>
+                    <iframe
+                      id="sc-radio-player"
+                      title="Nubian Radio"
+                      src={SC_EMBED_URL}
+                      allow="autoplay"
+                      style={{ width: "100%", height: 166, border: 0, display: "block" }}
+                      onLoad={() => {
+                        const loadApi = () => {
+                          const widget = window.SC.Widget(document.getElementById("sc-radio-player"));
+                          widget.bind(window.SC.Widget.Events.READY, () => {
+                            widget.getDuration(totalMs => {
+                              if (!totalMs) return;
+                              const totalSec = totalMs / 1000;
+                              const offsetSec = (Date.now() / 1000) % totalSec;
+                              widget.seekTo(offsetSec * 1000);
+                            });
+                          });
+                        };
+                        if (window.SC && window.SC.Widget) {
+                          loadApi();
+                        } else {
+                          const script = document.createElement("script");
+                          script.src = "https://w.soundcloud.com/player/api.js";
+                          script.onload = loadApi;
+                          document.head.appendChild(script);
+                        }
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             ) : (
