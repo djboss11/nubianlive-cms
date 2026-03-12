@@ -997,6 +997,8 @@ function PlayerModal({ item, onClose }) {
     if (!video || !item.hlsUrl) return;
 
     const onReady = () => {
+      video.muted = false;
+      video.volume = 1;
       video.play().catch(() => {});
     };
 
@@ -1042,7 +1044,6 @@ function PlayerModal({ item, onClose }) {
             <video
               ref={videoRef}
               controls
-              muted
               style={{ width: "100%", maxHeight: isMobile ? "55vh" : 480, display: "block" }}
             />
           ) : (
