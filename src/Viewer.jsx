@@ -12,12 +12,12 @@ function getProgress() {
 
 function saveProgress(item, currentTime, duration) {
   if (!item.id || !duration) return;
-  const pct = (currentTime / duration) * 100;
+  const pct = currentTime / duration;
   const all = getProgress();
-  if (pct >= 95) {
+  if (pct >= 0.95) {
     delete all[item.id];
-  } else if (pct >= 5) {
-    all[item.id] = { id: item.id, title: item.title, thumb: item.thumb, hlsUrl: item.hlsUrl, poster: item.poster, currentTime, duration, progress: Math.round(pct) };
+  } else if (pct >= 0.05) {
+    all[item.id] = { id: item.id, title: item.title, thumb: item.thumb, hlsUrl: item.hlsUrl, poster: item.poster, currentTime, duration, progress: Math.round(pct * 100) };
   }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
   console.log("[saveProgress]", item.title, "currentTime:", currentTime, "duration:", duration, "pct:", pct);
