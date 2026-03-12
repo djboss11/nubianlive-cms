@@ -20,7 +20,7 @@ function saveProgress(item, currentTime, duration) {
     all[item.id] = { id: item.id, title: item.title, thumb: item.thumb, hlsUrl: item.hlsUrl, poster: item.poster, currentTime, duration, progress: Math.round(pct) };
   }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
-  console.log(`[saveProgress] "${item.title}" — ${Math.round(pct)}% (${Math.round(currentTime)}s / ${Math.round(duration)}s)`);
+  console.log("[saveProgress]", item.title, "currentTime:", currentTime, "duration:", duration, "pct:", pct);
 }
 
 function useWatchHistory() {
