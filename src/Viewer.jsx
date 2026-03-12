@@ -1510,8 +1510,7 @@ export default function NubianLiveViewer() {
         scrolled={scrolled}
         onRadioClick={() => {
           setLiveChannelId(4);
-          setPage("live");
-          setPlaying(null);
+          navigate("live");
         }}
       />
 
