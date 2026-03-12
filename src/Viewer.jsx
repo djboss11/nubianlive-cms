@@ -1530,6 +1530,153 @@ function ContactPage() {
   );
 }
 
+// ── TITLE DETAIL PAGE ─────────────────────────────────────────────────────────
+
+function stripEpisode(title) {
+  return title.replace(/\s+(S\d+\s*EP?\s*\d+|Season\s*\d+|Ep\s*\d+|Episode\s*\d+|-\s*Sneak\s*Peek|-\s*Trailer)\s*$/i, "").trim();
+}
+
+function TitleDetailPage({ item, onBack, onPlay, onSelect }) {
+  const w = useWindowWidth();
+  const isMobile = w < 768;
+  const trailerRef = useRef(null);
+  const sidePad = isMobile ? 16 : 48;
+  const heroH = isMobile ? 320 : 520;
+
+  useEffect(() => { window.scrollTo(0, 0); }, [item.id]);
+
+  useEffect(() => {
+    if (!item.trailerUrl) return;
+    const video = trailerRef.current;
+    if (!video) return;
+    if (Hls.isSupported()) {
+      const h = new Hls();
+      h.loadSource(item.trailerUrl);
+      h.attachMedia(video);
+      return () => h.destroy();
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = item.trailerUrl;
+    }
+  }, [item]);
+
+  const allItems = categories.flatMap(c => c.items);
+  const seriesBase = stripEpisode(item.title);
+  const moreEpisodes = allItems.filter(i => i.id !== item.id && stripEpisode(i.title) === seriesBase);
+  const moreLikeThis = item.genre
+    ? allItems.filter(i => i.id !== item.id && i.genre === item.genre && stripEpisode(i.title) !== seriesBase)
+    : [];
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+
+      {/* ── Hero ── */}
+      <div style={{ position: "relative", height: heroH, background: "#000", overflow: "hidden" }}>
+
+        {item.trailerUrl ? (
+          <video
+            ref={trailerRef}
+            autoPlay muted loop playsInline
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
+          />
+        ) : item.poster ? (
+          <img
+            src={item.poster}
+            alt={item.title}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }}
+          />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 120, opacity: 0.15 }}>
+            {item.thumb || "🎬"}
+          </div>
+        )}
+
+        {/* Gradient overlays */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.2) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.7) 0%, transparent 65%)" }} />
+
+        {/* Back button */}
+        <button
+          onClick={onBack}
+          style={{
+            position: "absolute", top: isMobile ? 72 : 90, left: isMobile ? 14 : 24,
+            background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.25)",
+            color: "white", borderRadius: "50%", width: 42, height: 42,
+            fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", zIndex: 10, backdropFilter: "blur(6px)",
+          }}
+        >←</button>
+
+        {/* Text + buttons */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: `0 ${sidePad}px 36px` }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+            {item.genre && <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>{item.genre.toUpperCase()}</span>}
+            {item.year && <span style={{ fontSize: 12, color: "var(--text2)" }}>{item.year}</span>}
+            {item.rating && <span style={{ fontSize: 10, border: "1px solid var(--text3)", color: "var(--text3)", padding: "1px 6px", borderRadius: 2 }}>{item.rating}</span>}
+            {item.duration && <span style={{ fontSize: 12, color: "var(--text2)" }}>{item.duration}</span>}
+          </div>
+          <div style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: isMobile ? 34 : 56,
+            letterSpacing: 2, lineHeight: 1,
+            marginBottom: 12, textShadow: "0 2px 24px #000c",
+          }}>{item.title}</div>
+          {item.description && (
+            <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.65, marginBottom: 22, maxWidth: 480 }}>
+              {item.description}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={() => onPlay(item)}
+              style={{
+                background: "white", color: "black", border: "none", borderRadius: 6,
+                padding: "12px 30px", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >▶ Play</button>
+            {item.trailerUrl && (
+              <button
+                onClick={() => onPlay({ ...item, hlsUrl: item.trailerUrl, title: item.title + " — Trailer" })}
+                style={{
+                  background: "rgba(255,255,255,0.15)", color: "white",
+                  border: "1px solid rgba(255,255,255,0.35)", borderRadius: 6,
+                  padding: "12px 24px", fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", backdropFilter: "blur(4px)",
+                  display: "flex", alignItems: "center", gap: 8,
+                }}
+              >🎬 Trailer</button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── More Episodes ── */}
+      {moreEpisodes.length > 0 && (
+        <div style={{ padding: `36px ${sidePad}px 0` }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>More Episodes</div>
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}>
+            {moreEpisodes.map(ep => (
+              <ContentCard key={ep.id} item={ep} onClick={onSelect} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── More Like This ── */}
+      {moreLikeThis.length > 0 && (
+        <div style={{ padding: `36px ${sidePad}px 40px` }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>More Like This</div>
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}>
+            {moreLikeThis.map(rel => (
+              <ContentCard key={rel.id} item={rel} onClick={onSelect} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
@@ -1540,11 +1687,18 @@ export default function NubianLiveViewer() {
   const [playing, setPlaying] = useState(null);
   const [lang, setLang] = useState("en");
   const [liveChannelId, setLiveChannelId] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
   const t = T[lang];
 
   const navigate = useCallback((p) => {
     setPage(p);
     setPlaying(null);
+    setDetailItem(null);
+  }, []);
+
+  const openDetail = useCallback((item) => {
+    setDetailItem(item);
+    window.scrollTo(0, 0);
   }, []);
 
   const handleContentSelect = useCallback((item) => {
@@ -1553,10 +1707,9 @@ export default function NubianLiveViewer() {
       setLiveChannelId(ch ? ch.id : channels[0].id);
       navigate("live");
     } else {
-      addToWatched(item);
-      setPlaying(item);
+      openDetail(item);
     }
-  }, [navigate]);
+  }, [navigate, openDetail]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -1586,15 +1739,27 @@ export default function NubianLiveViewer() {
       />
 
       <div style={{ minHeight: "100vh" }}>
-        {page === "home" && (
+        {detailItem ? (
+          <div style={{ paddingTop: 0 }}>
+            <TitleDetailPage
+              item={detailItem}
+              onBack={() => setDetailItem(null)}
+              onPlay={(item) => { addToWatched(item); setPlaying(item); }}
+              onSelect={openDetail}
+            />
+          </div>
+        ) : page === "home" ? (
           <>
             <Hero onPlay={() => { addToWatched(featured); setPlaying(featured); }} t={t} />
-            <ContinueWatching onSelect={(item) => { addToWatched(item); setPlaying(item); }} t={t} />
+            <ContinueWatching onSelect={openDetail} t={t} />
             {categories.map(cat => (
               <ContentRow key={cat.name} category={cat} onSelect={handleContentSelect} t={t} />
             ))}
           </>
-        )}
+        ) : null}
+
+        {!detailItem && page !== "home" && (
+          <>
 
         {page === "live" && (
           <div style={{ paddingTop: 80 }}>
@@ -1619,6 +1784,8 @@ export default function NubianLiveViewer() {
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
+          </>
+        )}
       </div>
 
       {/* Footer */}
