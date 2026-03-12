@@ -592,11 +592,12 @@ function ContinueWatching({ onSelect, t, refreshKey }) {
   const sidePad = w < 768 ? 16 : 48;
   const items = Object.values(getProgress());
 
-  if (items.length === 0) return null;
-
   return (
     <div style={{ marginBottom: 40, marginTop: -80, position: "relative", zIndex: 2 }}>
       <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: sidePad }}>{t.continueWatching}</div>
+      {items.length === 0 ? (
+        <div style={{ paddingLeft: sidePad, fontSize: 13, color: "var(--text3)" }}>No items yet</div>
+      ) : (
       <div style={{
         display: "flex", gap: 10, paddingLeft: sidePad, paddingRight: sidePad,
         overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8,
@@ -627,6 +628,7 @@ function ContinueWatching({ onSelect, t, refreshKey }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
