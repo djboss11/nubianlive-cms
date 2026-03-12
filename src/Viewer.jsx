@@ -206,7 +206,7 @@ const featured = {
   id: 100,
   title: "WELCOME TO NUBIAN TELEVISION",
   hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8",
-  poster: null,
+  poster: "/favicon.ico",
   description: "The home of Black culture, stories, and entertainment. Stream original series, documentaries, live TV, and exclusive events — all in one place.",
   genre: "Platform",
   year: 2026,
