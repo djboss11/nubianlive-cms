@@ -2,6 +2,32 @@ import { useState, useEffect, useRef, useCallback, createContext, useContext } f
 import Hls from "hls.js";
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');`;
 
+// ── WATCH PROGRESS ────────────────────────────────────────────────────────────
+
+const PROGRESS_KEY = "nubian_watch_progress";
+
+function getProgress() {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveProgress(item, currentTime, duration) {
+  if (!item.id || !duration) return;
+  const pct = (currentTime / duration) * 100;
+  const all = getProgress();
+  if (pct >= 95) {
+    delete all[item.id];
+  } else if (pct >= 5) {
+    all[item.id] = { id: item.id, title: item.title, thumb: item.thumb, hlsUrl: item.hlsUrl, poster: item.poster, currentTime, duration, progress: Math.round(pct) };
+  }
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+}
+
+function useWatchHistory() {
+  const [items, setItems] = useState(() => Object.values(getProgress()));
+  const refresh = () => setItems(Object.values(getProgress()));
+  return [items, refresh];
+}
+
 // ── WINDOW WIDTH HOOK ──────────────────────────────────────────────────────────
 
 function useWindowWidth() {
@@ -561,9 +587,12 @@ function Hero({ onPlay, t }) {
 
 // ── CONTINUE WATCHING ─────────────────────────────────────────────────────────
 
-function ContinueWatching({ onSelect, t }) {
+function ContinueWatching({ onSelect, t, refreshKey }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
+  const items = Object.values(getProgress());
+
+  if (items.length === 0) return null;
 
   return (
     <div style={{ marginBottom: 40, marginTop: -80, position: "relative", zIndex: 2 }}>
@@ -573,10 +602,13 @@ function ContinueWatching({ onSelect, t }) {
         overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8,
         WebkitOverflowScrolling: "touch",
       }}>
-        {continueWatching.map(item => (
+        {items.map(item => (
           <div key={item.id} onClick={() => onSelect(item)} style={{ width: w < 768 ? 160 : 220, flexShrink: 0, cursor: "pointer" }}>
             <div style={{ position: "relative", height: w < 768 ? 90 : 124, background: "#1a1a1a", borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 6 }}>
-              <span>{item.thumb}</span>
+              {item.poster
+                ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span>{item.thumb || "🎬"}</span>
+              }
               {/* Progress bar */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "#333" }}>
                 <div style={{ width: `${item.progress}%`, height: "100%", background: "var(--accent)" }} />
@@ -591,7 +623,7 @@ function ContinueWatching({ onSelect, t }) {
               </div>
             </div>
             <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.episode || item.duration} · {item.progress}% {t.watched}</div>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{item.progress}% {t.watched}</div>
           </div>
         ))}
       </div>
@@ -964,10 +996,11 @@ function SearchPanel({ query, onSelect, t }) {
 
 // ── PLAYER MODAL ──────────────────────────────────────────────────────────────
 
-function PlayerModal({ item, onClose }) {
+function PlayerModal({ item, onClose, onProgressSaved }) {
   const w = useWindowWidth();
   const isMobile = w < 768;
   const videoRef = useRef(null);
+  const progressInterval = useRef(null);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -979,15 +1012,31 @@ function PlayerModal({ item, onClose }) {
     const video = videoRef.current;
     if (!video || !item.hlsUrl) return;
 
+    const onReady = () => {
+      // Seek to saved position if available
+      const saved = getProgress()[item.id];
+      if (saved && saved.currentTime > 0) video.currentTime = saved.currentTime;
+      video.play().catch(() => {});
+
+      // Save progress every 10s
+      progressInterval.current = setInterval(() => {
+        if (!video.paused && video.duration) {
+          saveProgress(item, video.currentTime, video.duration);
+          onProgressSaved && onProgressSaved();
+        }
+      }, 10000);
+    };
+
     if (Hls.isSupported()) {
       const hlsInstance = new Hls();
       hlsInstance.loadSource(item.hlsUrl);
       hlsInstance.attachMedia(video);
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      return () => hlsInstance.destroy();
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, onReady);
+      return () => { hlsInstance.destroy(); clearInterval(progressInterval.current); };
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = item.hlsUrl;
-      video.play();
+      video.addEventListener("loadedmetadata", onReady, { once: true });
+      return () => clearInterval(progressInterval.current);
     }
   }, [item]);
 
@@ -1469,6 +1518,7 @@ export default function NubianLiveViewer() {
   const [playing, setPlaying] = useState(null);
   const [lang, setLang] = useState("en");
   const [liveChannelId, setLiveChannelId] = useState(null);
+  const [progressRefresh, setProgressRefresh] = useState(0);
   const t = T[lang];
 
   const navigate = useCallback((p) => {
@@ -1517,7 +1567,7 @@ export default function NubianLiveViewer() {
         {page === "home" && (
           <>
             <Hero onPlay={() => setPlaying(featured)} t={t} />
-            <ContinueWatching onSelect={setPlaying} t={t} />
+            <ContinueWatching onSelect={setPlaying} t={t} refreshKey={progressRefresh} />
             {categories.map(cat => (
               <ContentRow key={cat.name} category={cat} onSelect={handleContentSelect} t={t} />
             ))}
@@ -1620,7 +1670,7 @@ export default function NubianLiveViewer() {
       </div>
 
       {/* Player modal */}
-      {playing && <PlayerModal item={playing} onClose={() => setPlaying(null)} />}
+      {playing && <PlayerModal item={playing} onClose={() => { setPlaying(null); setProgressRefresh(r => r + 1); }} onProgressSaved={() => setProgressRefresh(r => r + 1)} />}
     </LangContext.Provider>
   );
 }
