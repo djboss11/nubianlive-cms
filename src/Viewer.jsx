@@ -1509,8 +1509,9 @@ export default function NubianLiveViewer() {
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
         scrolled={scrolled}
         onRadioClick={() => {
-          setLiveChannelId(channels.find(c => c.isRadio)?.id ?? 4);
-          navigate("live");
+          setLiveChannelId(4);
+          setPage("live");
+          setPlaying(null);
         }}
       />
 
