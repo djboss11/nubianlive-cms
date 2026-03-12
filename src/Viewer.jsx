@@ -985,6 +985,21 @@ function PlayerModal({ item, onClose }) {
   const w = useWindowWidth();
   const isMobile = w < 768;
   const videoRef = useRef(null);
+  const [showUnmute, setShowUnmute] = useState(true);
+  const [unmuteFading, setUnmuteFading] = useState(false);
+
+  const handleUnmute = () => {
+    const video = videoRef.current;
+    if (video) { video.muted = false; video.volume = 1; }
+    setShowUnmute(false);
+  };
+
+  useEffect(() => {
+    if (!showUnmute) return;
+    const fadeTimer = setTimeout(() => setUnmuteFading(true), 4500);
+    const hideTimer = setTimeout(() => setShowUnmute(false), 5000);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+  }, [showUnmute]);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -995,9 +1010,11 @@ function PlayerModal({ item, onClose }) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !item.hlsUrl) return;
+    setShowUnmute(true);
+    setUnmuteFading(false);
 
     const onReady = () => {
-      video.muted = false;
+      video.muted = true;
       video.volume = 1;
       video.play().catch(() => {});
     };
@@ -1041,11 +1058,43 @@ function PlayerModal({ item, onClose }) {
       <div onClick={e => e.stopPropagation()} style={modalStyle}>
         <div style={{ position: "relative", background: "#000", flex: isMobile ? "none" : undefined }}>
           {item.hlsUrl ? (
-            <video
-              ref={videoRef}
-              controls
-              style={{ width: "100%", maxHeight: isMobile ? "55vh" : 480, display: "block" }}
-            />
+            <>
+              <video
+                ref={videoRef}
+                controls
+                muted
+                style={{ width: "100%", maxHeight: isMobile ? "55vh" : 480, display: "block" }}
+              />
+              {showUnmute && (
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  pointerEvents: "none",
+                }}>
+                  <button
+                    onClick={handleUnmute}
+                    style={{
+                      pointerEvents: "all",
+                      background: "rgba(0,0,0,0.72)",
+                      border: "2px solid rgba(255,255,255,0.6)",
+                      borderRadius: 50,
+                      color: "#fff",
+                      fontSize: isMobile ? 16 : 18,
+                      fontWeight: 600,
+                      padding: "14px 28px",
+                      cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 10,
+                      backdropFilter: "blur(6px)",
+                      transition: "opacity 0.5s",
+                      opacity: unmuteFading ? 0 : 1,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>🔊</span> Tap to Unmute
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div style={{ height: isMobile ? "55vh" : 480, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 100, opacity: 0.3 }}>{item.thumb}</span>
