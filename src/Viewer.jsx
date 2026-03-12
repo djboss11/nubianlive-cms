@@ -20,6 +20,7 @@ function saveProgress(item, currentTime, duration) {
     all[item.id] = { id: item.id, title: item.title, thumb: item.thumb, hlsUrl: item.hlsUrl, poster: item.poster, currentTime, duration, progress: Math.round(pct) };
   }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  console.log(`[saveProgress] "${item.title}" — ${Math.round(pct)}% (${Math.round(currentTime)}s / ${Math.round(duration)}s)`);
 }
 
 function useWatchHistory() {
@@ -1026,7 +1027,7 @@ function PlayerModal({ item, onClose, onProgressSaved }) {
           saveProgress(item, video.currentTime, video.duration);
           onProgressSaved && onProgressSaved();
         }
-      }, 10000);
+      }, 3000);
     };
 
     if (Hls.isSupported()) {
