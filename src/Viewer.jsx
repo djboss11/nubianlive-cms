@@ -209,7 +209,7 @@ const continueWatching = [
 
 const categories = [
   {
-    name: "Trending Now",
+    name: "Coming Soon",
     items: [
       { id: 1, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
       { id: 2, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
