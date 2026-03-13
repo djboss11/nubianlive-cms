@@ -291,11 +291,14 @@ const ppvEvents = [
   { id: 3, title: "Global Music Fest", subtitle: "Live from Lagos · 12 Artists", date: "Apr 5, 2026", time: "7:00 PM EST", price: 14.99, thumb: "🎤", gradient: "linear-gradient(135deg, #001a10, #002a20)" },
 ];
 
+const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3];
+
 const channels = [
-  { id: 1, name: "Eastern", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/0800a710bf6f0ceb73c96919a2354741/manifest/video.m3u8" },
-  { id: 2, name: "Pacific", current: "Championship Match", next: "Pre-Game Analysis", status: "live", thumb: "⚽" },
-  { id: 3, name: "Africa/Europe", current: "Jazz Morning", next: "Top 40 Countdown", status: "live", thumb: "🎵" },
-  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
+  { id: 1, name: "Eastern",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET"  },
+  { id: 5, name: "Central",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT"  },
+  { id: 2, name: "Pacific",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT"  },
+  { id: 3, name: "West Africa/Europe", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,   displayOffsetHr: 4,  tzLabel: "WAT" },
+  { id: 4, name: "Nubian Radio",     current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
 ];
 
 const searchResults = [
@@ -353,14 +356,14 @@ function calcEasternPos(timeInShow, adBreaks) {
 
 // ── EASTERN CHANNEL COMPONENT ─────────────────────────────────────────────────
 
-function EasternChannel({ muted, volume }) {
+function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLabel }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const currentVideoIdRef = useRef(null);
   const [nowPlaying, setNowPlaying] = useState("");
   const [upNext, setUpNext] = useState("");
   const [isAdSlate, setIsAdSlate] = useState(false);
-  const [etDisplay, setEtDisplay] = useState("");
+  const [timeDisplay, setTimeDisplay] = useState("");
 
   function loadVideo(videoId, seekPos) {
     const video = videoRef.current;
@@ -388,9 +391,19 @@ function EasternChannel({ muted, volume }) {
   useEffect(() => {
     function sync() {
       const etSec = getETSecondsSinceMidnight();
-      const posInBlock = etSec % EASTERN_BLOCK;
 
-      // Find current show (last whose blockStart <= posInBlock)
+      // Apply offset: subtract blockOffsetSec to shift when block starts in ET terms
+      const posInBlock = (etSec - blockOffsetSec + EASTERN_BLOCK * 100) % EASTERN_BLOCK;
+
+      // Local display time
+      const localSec = (etSec + displayOffsetHr * 3600 + 86400 * 10) % 86400;
+      const h = Math.floor(localSec / 3600) % 24;
+      const m = Math.floor((localSec % 3600) / 60);
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      setTimeDisplay(`${h12}:${String(m).padStart(2, "0")} ${ampm} ${tzLabel}`);
+
+      // Find current show
       let idx = 0;
       for (let i = EASTERN_SCHEDULE.length - 1; i >= 0; i--) {
         if (posInBlock >= EASTERN_SCHEDULE[i].blockStart) { idx = i; break; }
@@ -403,7 +416,6 @@ function EasternChannel({ muted, volume }) {
       const targetId = isInAd ? AD_SLATE_ID : show.videoId;
       const targetPos = isInAd ? adSeek : videoPos;
 
-      setEtDisplay(formatET(etSec));
       setIsAdSlate(isInAd);
       setNowPlaying(show.title);
       setUpNext(isInAd ? show.title : nextShow.title);
@@ -423,7 +435,7 @@ function EasternChannel({ muted, volume }) {
       clearInterval(interval);
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
     };
-  }, []);
+  }, [blockOffsetSec, displayOffsetHr, tzLabel]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -445,7 +457,7 @@ function EasternChannel({ muted, volume }) {
         )}
       </div>
       <div style={{ position: "absolute", top: 16, right: 16, fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "'DM Mono', monospace", background: "rgba(0,0,0,0.55)", padding: "3px 8px", borderRadius: 4 }}>
-        {etDisplay}
+        {timeDisplay}
       </div>
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000c, transparent)", pointerEvents: "none" }}>
         <div style={{ fontWeight: 700, fontSize: 16 }}>
@@ -813,7 +825,7 @@ function LiveTV({ t, initialChannelId }) {
   // HLS video effect
   useEffect(() => {
     if (isRadio) return;
-    if (activeChannel.id === 1) return; // Eastern uses its own HLS component
+    if (SCHEDULED_CHANNEL_IDS.includes(activeChannel.id)) return; // scheduled channels manage their own HLS
     const video = videoRef.current;
     if (!video || !activeChannel.hlsUrl) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
@@ -972,8 +984,15 @@ function LiveTV({ t, initialChannelId }) {
             ) : (
               /* Video player */
               <>
-                {activeChannel.id === 1 ? (
-                  <EasternChannel muted={muted} volume={volume} />
+                {SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) ? (
+                  <ScheduledChannel
+                    key={activeChannel.id}
+                    muted={muted}
+                    volume={volume}
+                    blockOffsetSec={activeChannel.blockOffsetSec}
+                    displayOffsetHr={activeChannel.displayOffsetHr}
+                    tzLabel={activeChannel.tzLabel}
+                  />
                 ) : activeChannel.hlsUrl ? (
                   <video
                     ref={videoRef}
@@ -985,7 +1004,7 @@ function LiveTV({ t, initialChannelId }) {
                     <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
                   </div>
                 )}
-                {activeChannel.id !== 1 && (
+                {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
                   <>
                     <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
                     <div style={{ position: "absolute", bottom: 48, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
