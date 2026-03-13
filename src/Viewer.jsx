@@ -305,6 +305,158 @@ const searchResults = [
   { id: 4, title: "Cosmos: Remastered", thumb: "🌌", type: "Documentary", year: 2023 },
 ];
 
+// ── EASTERN CHANNEL SCHEDULE ──────────────────────────────────────────────────
+
+const AD_SLATE_ID = "5ddd6c7f8aa7108453155d183f200727";
+const AD_SLATE_DURATION = 240;
+const EASTERN_BLOCK = 14400; // 4-hour loop in seconds
+
+const EASTERN_SCHEDULE = [
+  { title: "Africa a-la-carte",      videoId: "92ec6bce27c3f27394e777cca7d9791e", duration: 2640, adBreaks: [695, 977, 2010, 2378],       blockStart: 0     },
+  { title: "Charnita's World S1EP5", videoId: "e668112f6a3cbf10919271968c97c28f", duration: 2738, adBreaks: [837, 1222, 1588, 2239],      blockStart: 3600  },
+  { title: "2 Koconut Heads",        videoId: "6c13a36b28c12fcdd40760c31a0e2132", duration: 1380, adBreaks: [450, 690],                    blockStart: 7200  },
+  { title: "American Hate",          videoId: "5fe405831cdbec5bd9e2c9c83031d726", duration: 2640, adBreaks: [625, 1221, 2204, 2434],       blockStart: 9000  },
+  { title: "Horse Talk S1EP3",       videoId: "c2f415fd160e45665513b5dec826e49a", duration: 1320, adBreaks: [437, 951],                    blockStart: 11640 },
+];
+
+function getETSecondsSinceMidnight() {
+  const etDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+  return etDate.getHours() * 3600 + etDate.getMinutes() * 60 + etDate.getSeconds();
+}
+
+function formatET(totalSec) {
+  const h = Math.floor(totalSec / 3600) % 24;
+  const m = Math.floor((totalSec % 3600) / 60);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm} ET`;
+}
+
+// Returns { videoPos, isInAd, adSeek } given wall-clock seconds elapsed since show start
+function calcEasternPos(timeInShow, adBreaks) {
+  const breaks = [...adBreaks].sort((a, b) => a - b);
+  let wallClock = 0, videoPos = 0;
+  for (const breakAt of breaks) {
+    const toBreak = breakAt - videoPos;
+    if (wallClock + toBreak > timeInShow) {
+      return { videoPos: videoPos + (timeInShow - wallClock), isInAd: false, adSeek: 0 };
+    }
+    wallClock += toBreak;
+    videoPos = breakAt;
+    if (wallClock + AD_SLATE_DURATION > timeInShow) {
+      return { videoPos, isInAd: true, adSeek: timeInShow - wallClock };
+    }
+    wallClock += AD_SLATE_DURATION;
+  }
+  return { videoPos: videoPos + (timeInShow - wallClock), isInAd: false, adSeek: 0 };
+}
+
+// ── EASTERN CHANNEL COMPONENT ─────────────────────────────────────────────────
+
+function EasternChannel({ muted, volume }) {
+  const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+  const currentVideoIdRef = useRef(null);
+  const [nowPlaying, setNowPlaying] = useState("");
+  const [upNext, setUpNext] = useState("");
+  const [isAdSlate, setIsAdSlate] = useState(false);
+  const [etDisplay, setEtDisplay] = useState("");
+
+  function loadVideo(videoId, seekPos) {
+    const video = videoRef.current;
+    if (!video) return;
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    const url = hls(videoId);
+    if (Hls.isSupported()) {
+      const h = new Hls();
+      hlsRef.current = h;
+      h.loadSource(url);
+      h.attachMedia(video);
+      h.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (seekPos > 0) video.currentTime = seekPos;
+        video.play().catch(() => {});
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url;
+      video.addEventListener("loadedmetadata", () => {
+        if (seekPos > 0) video.currentTime = seekPos;
+        video.play().catch(() => {});
+      }, { once: true });
+    }
+  }
+
+  useEffect(() => {
+    function sync() {
+      const etSec = getETSecondsSinceMidnight();
+      const posInBlock = etSec % EASTERN_BLOCK;
+
+      // Find current show (last whose blockStart <= posInBlock)
+      let idx = 0;
+      for (let i = EASTERN_SCHEDULE.length - 1; i >= 0; i--) {
+        if (posInBlock >= EASTERN_SCHEDULE[i].blockStart) { idx = i; break; }
+      }
+      const show = EASTERN_SCHEDULE[idx];
+      const nextShow = EASTERN_SCHEDULE[(idx + 1) % EASTERN_SCHEDULE.length];
+      const timeInShow = posInBlock - show.blockStart;
+      const { videoPos, isInAd, adSeek } = calcEasternPos(timeInShow, show.adBreaks);
+
+      const targetId = isInAd ? AD_SLATE_ID : show.videoId;
+      const targetPos = isInAd ? adSeek : videoPos;
+
+      setEtDisplay(formatET(etSec));
+      setIsAdSlate(isInAd);
+      setNowPlaying(show.title);
+      setUpNext(isInAd ? show.title : nextShow.title);
+
+      if (currentVideoIdRef.current !== targetId) {
+        currentVideoIdRef.current = targetId;
+        loadVideo(targetId, targetPos);
+      } else if (videoRef.current) {
+        const drift = Math.abs(videoRef.current.currentTime - targetPos);
+        if (drift > 15) videoRef.current.currentTime = targetPos;
+      }
+    }
+
+    sync();
+    const interval = setInterval(sync, 5000);
+    return () => {
+      clearInterval(interval);
+      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+      videoRef.current.volume = volume;
+    }
+  }, [muted, volume]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
+      />
+      <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 8, alignItems: "center" }}>
+        <LiveBadge />
+        {isAdSlate && (
+          <span style={{ background: "#ff9500", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 3, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>AD</span>
+        )}
+      </div>
+      <div style={{ position: "absolute", top: 16, right: 16, fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "'DM Mono', monospace", background: "rgba(0,0,0,0.55)", padding: "3px 8px", borderRadius: 4 }}>
+        {etDisplay}
+      </div>
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000c, transparent)", pointerEvents: "none" }}>
+        <div style={{ fontWeight: 700, fontSize: 16 }}>
+          {isAdSlate ? "Commercial Break" : `Now Playing: ${nowPlaying}`}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>Up Next: {upNext}</div>
+      </div>
+    </>
+  );
+}
+
 // ── COMPONENTS ────────────────────────────────────────────────────────────────
 
 function LiveBadge() {
@@ -661,6 +813,7 @@ function LiveTV({ t, initialChannelId }) {
   // HLS video effect
   useEffect(() => {
     if (isRadio) return;
+    if (activeChannel.id === 1) return; // Eastern uses its own HLS component
     const video = videoRef.current;
     if (!video || !activeChannel.hlsUrl) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
@@ -819,7 +972,9 @@ function LiveTV({ t, initialChannelId }) {
             ) : (
               /* Video player */
               <>
-                {activeChannel.hlsUrl ? (
+                {activeChannel.id === 1 ? (
+                  <EasternChannel muted={muted} volume={volume} />
+                ) : activeChannel.hlsUrl ? (
                   <video
                     ref={videoRef}
                     muted={muted}
@@ -830,11 +985,15 @@ function LiveTV({ t, initialChannelId }) {
                     <span style={{ fontSize: 80 }}>{activeChannel.thumb}</span>
                   </div>
                 )}
-                <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-                <div style={{ position: "absolute", bottom: 48, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
-                  <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
-                  <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
-                </div>
+                {activeChannel.id !== 1 && (
+                  <>
+                    <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
+                    <div style={{ position: "absolute", bottom: 48, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
+                      <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
+                      <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
