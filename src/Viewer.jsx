@@ -1429,7 +1429,7 @@ function PlayerModal({ item, onClose }) {
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
-function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick }) {
+function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick, subscription, onManageSubscription }) {
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1505,6 +1505,11 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
+            {subscription?.subscribed ? (
+              <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
+            ) : (
+              <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
+            )}
             <LanguageSwitcher />
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #ff6b35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>N</div>
           </div>
@@ -1558,11 +1563,16 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               borderLeft: page === n.id ? "3px solid var(--accent)" : "3px solid transparent",
             }}>{n.label}</button>
           ))}
-          <div style={{ borderTop: "1px solid var(--border)", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ borderTop: "1px solid var(--border)", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => { setPage("live"); setMenuOpen(false); }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
+            {subscription?.subscribed ? (
+              <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
+            ) : (
+              <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
+            )}
             <LanguageSwitcher />
           </div>
         </div>
@@ -1987,6 +1997,133 @@ function TitleDetailPage({ item, onBack, onPlay, onSelect }) {
   );
 }
 
+// ── SUBSCRIPTION ──────────────────────────────────────────────────────────────
+
+const API_BASE = "https://api.nubianlive.com";
+
+function getSubscription() {
+  try { return JSON.parse(localStorage.getItem("nubian_subscription") || "null"); }
+  catch { return null; }
+}
+function saveSubscription(data) {
+  localStorage.setItem("nubian_subscription", JSON.stringify(data));
+}
+
+async function startCheckout(plan) {
+  try {
+    const res = await fetch(`${API_BASE}/api/stripe/create-checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  } catch { alert("Could not start checkout. Please try again."); }
+}
+
+async function openPortal(customerId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/stripe/create-portal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_id: customerId, return_url: window.location.origin }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  } catch { alert("Could not open portal. Please try again."); }
+}
+
+function PaywallModal({ item, onClose }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 400, width: "100%", position: "relative" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1 }}>✕</button>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Subscribe to watch</h2>
+        <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button onClick={() => startCheckout("monthly")} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%" }}>
+            Subscribe — $2.99/mo
+          </button>
+          <button onClick={() => startCheckout("annual")} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            Subscribe — $29.99/yr <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>Save 17%</span>
+          </button>
+        </div>
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text3)", fontSize: 13, textDecoration: "underline" }}>Continue as Guest</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SubscribePage({ navigate }) {
+  const w = useWindowWidth();
+  const isMobile = w < 640;
+  const features = ["Full library access", "Live TV channels", "New content weekly", "Watch on any device"];
+  return (
+    <div style={{ minHeight: "100vh", paddingTop: 100, paddingBottom: 80 }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
+        <div style={{ marginBottom: 12 }}>
+          <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Stream Now</span>
+        </div>
+        <h1 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>
+          Unlimited Black Entertainment
+        </h1>
+        <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 520, margin: "0 auto 48px" }}>
+          Watch original series, movies, documentaries, and live TV — all in one place.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, justifyContent: "center", marginBottom: 48, alignItems: isMobile ? "stretch" : "flex-start" }}>
+          {/* Monthly */}
+          <div style={{ flex: 1, maxWidth: 340, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, textAlign: "left" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
+            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$2.99</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 28 }}>per month · Cancel anytime</div>
+            <ul style={{ listStyle: "none", padding: 0, marginBottom: 28, display: "flex", flexDirection: "column", gap: 10 }}>
+              {features.map(f => (
+                <li key={f} style={{ fontSize: 14, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#4ade80" }}>✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => startCheckout("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700 }}>
+              Subscribe Now
+            </button>
+          </div>
+
+          {/* Annual */}
+          <div style={{ flex: 1, maxWidth: 340, background: "var(--bg2)", border: "2px solid var(--accent)", borderRadius: 16, padding: 32, textAlign: "left", position: "relative" }}>
+            <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#4ade80", color: "#000", fontSize: 11, fontWeight: 800, padding: "3px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>BEST VALUE — Save 17%</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Annual</div>
+            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$29.99</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 28 }}>per year · just $2.50/mo</div>
+            <ul style={{ listStyle: "none", padding: 0, marginBottom: 28, display: "flex", flexDirection: "column", gap: 10 }}>
+              {features.map(f => (
+                <li key={f} style={{ fontSize: 14, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#4ade80" }}>✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => startCheckout("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700 }}>
+              Subscribe Now
+            </button>
+          </div>
+        </div>
+
+        {/* Guest account */}
+        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 480, margin: "0 auto" }}>
+          <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Sponsor or Investor?</p>
+          <p style={{ fontSize: 14, color: "var(--text2)", marginBottom: 18 }}>Request a Guest Account — watch everything free as our guest.</p>
+          <button onClick={() => navigate("contact")} style={{ background: "transparent", border: "1px solid var(--border)", color: "white", borderRadius: 8, padding: "10px 22px", fontSize: 14, cursor: "pointer" }}>
+            Request Guest Account →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
@@ -1998,6 +2135,8 @@ export default function NubianLiveViewer() {
   const [lang, setLang] = useState("en");
   const [liveChannelId, setLiveChannelId] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
+  const [subscription, setSubscription] = useState(() => getSubscription());
+  const [paywallItem, setPaywallItem] = useState(null);
   const t = T[lang];
 
   const navigate = useCallback((p) => {
@@ -2011,15 +2150,60 @@ export default function NubianLiveViewer() {
     window.scrollTo(0, 0);
   }, []);
 
+  const VOD_TYPES = ["Series", "Movie", "Documentary"];
+
   const handleContentSelect = useCallback((item) => {
     if (item.type === "LIVE") {
       const ch = channels.find(c => c.name === item.title);
       setLiveChannelId(ch ? ch.id : channels[0].id);
       navigate("live");
+    } else if (!subscription?.subscribed && VOD_TYPES.includes(item.type)) {
+      setPaywallItem(item);
     } else {
       openDetail(item);
     }
-  }, [navigate, openDetail]);
+  }, [navigate, openDetail, subscription]);
+
+  const handlePlay = useCallback((item) => {
+    if (!subscription?.subscribed && VOD_TYPES.includes(item.type)) {
+      setPaywallItem(item);
+    } else {
+      addToWatched(item);
+      setPlaying(item);
+    }
+  }, [subscription]);
+
+  const handleManageSubscription = useCallback(() => {
+    if (subscription?.customer_id) {
+      openPortal(subscription.customer_id);
+    } else {
+      navigate("subscribe");
+    }
+  }, [subscription, navigate]);
+
+  // Verify Stripe session on redirect back from checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (!sessionId) return;
+    // Clean URL immediately
+    window.history.replaceState({}, "", window.location.pathname);
+    fetch(`${API_BASE}/api/subscription/verify?session_id=${sessionId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.subscription_status === "active" || data.payment_status === "paid") {
+          const sub = {
+            subscribed: true,
+            plan: data.plan,
+            customer_email: data.customer_email,
+            customer_id: data.customer_id,
+          };
+          saveSubscription(sub);
+          setSubscription(sub);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -2046,6 +2230,8 @@ export default function NubianLiveViewer() {
           setLiveChannelId(4);
           setTimeout(() => navigate("live"), 0);
         }}
+        subscription={subscription}
+        onManageSubscription={handleManageSubscription}
       />
 
       <div style={{ minHeight: "100vh" }}>
@@ -2054,8 +2240,8 @@ export default function NubianLiveViewer() {
             <TitleDetailPage
               item={detailItem}
               onBack={() => setDetailItem(null)}
-              onPlay={(item) => { addToWatched(item); setPlaying(item); }}
-              onSelect={openDetail}
+              onPlay={handlePlay}
+              onSelect={handleContentSelect}
             />
           </div>
         ) : page === "home" ? (
@@ -2094,9 +2280,17 @@ export default function NubianLiveViewer() {
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
+        {page === "subscribe" && <SubscribePage navigate={navigate} />}
           </>
         )}
       </div>
+
+      {paywallItem && (
+        <PaywallModal
+          item={paywallItem}
+          onClose={() => setPaywallItem(null)}
+        />
+      )}
 
       {/* Footer */}
       <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: `40px ${footerPad}px`, marginTop: 60 }}>
