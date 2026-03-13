@@ -1415,7 +1415,6 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
     { id: "home", label: t.home },
     { id: "live", label: t.liveTV },
     { id: "ppv", label: t.ppv },
-    { id: "search", label: t.browse },
   ];
 
   const handleNavClick = (id) => {
