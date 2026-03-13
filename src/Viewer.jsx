@@ -421,8 +421,8 @@ function ContentRow({ category, onSelect }) {
   const sidePad = w < 768 ? 16 : 48;
 
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10, paddingLeft: sidePad }}>{category.name}</div>
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, paddingLeft: sidePad }}>{category.name}</div>
       <div style={{ position: "relative" }}>
         {w >= 768 && (
           <button onClick={() => scroll(-1)} style={{
@@ -434,7 +434,7 @@ function ContentRow({ category, onSelect }) {
         <div ref={rowRef} style={{
           display: "flex", gap: 8, overflowX: "auto",
           paddingLeft: sidePad, paddingRight: sidePad,
-          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 60,
+          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 30,
           WebkitOverflowScrolling: "touch",
         }}>
           {category.items.map(item => (
