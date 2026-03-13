@@ -508,7 +508,7 @@ function Hero({ onPlay, t }) {
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, var(--bg) 0%, transparent 55%)" }} />
 
       {/* Content */}
-      <div style={{ position: "absolute", bottom: w < 768 ? "12%" : "18%", left: sidePad, maxWidth: w < 768 ? "calc(100% - 32px)" : 520 }}>
+      <div style={{ position: "absolute", bottom: w < 768 ? "20%" : "18%", left: sidePad, maxWidth: w < 768 ? "calc(100% - 32px)" : 520 }}>
         <div style={{
           fontFamily: "'Bebas Neue', sans-serif",
           fontSize: titleFontSize,
@@ -580,7 +580,7 @@ function ContinueWatching({ onSelect, refreshKey }) {
   if (items.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 40, marginTop: -80, position: "relative", zIndex: 2 }}>
+    <div style={{ marginBottom: 40, marginTop: w < 768 ? 16 : -80, position: "relative", zIndex: 2 }}>
       <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: sidePad }}>Previously Watched</div>
       <div style={{
         display: "flex", gap: 10, paddingLeft: sidePad, paddingRight: sidePad,
