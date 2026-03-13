@@ -365,6 +365,23 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
   const [upNext, setUpNext] = useState("");
   const [isAdSlate, setIsAdSlate] = useState(false);
   const [timeDisplay, setTimeDisplay] = useState("");
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const overlayTimerRef = useRef(null);
+
+  // Show overlay when show changes, then fade out after 5s
+  useEffect(() => {
+    if (!nowPlaying) return;
+    setOverlayVisible(true);
+    clearTimeout(overlayTimerRef.current);
+    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
+    return () => clearTimeout(overlayTimerRef.current);
+  }, [nowPlaying]);
+
+  function showOverlayBriefly() {
+    setOverlayVisible(true);
+    clearTimeout(overlayTimerRef.current);
+    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
+  }
 
   function loadVideo(videoId, seekPos) {
     const video = videoRef.current;
@@ -446,10 +463,10 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
   }, [muted, volume]);
 
   return (
-    <>
+    <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }} onMouseEnter={showOverlayBriefly}>
       <video
         ref={videoRef}
-        style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
+        style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
       />
       <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 8, alignItems: "center" }}>
         <LiveBadge />
@@ -460,13 +477,20 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
       <div style={{ position: "absolute", top: 16, right: 16, fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "'DM Mono', monospace", background: "rgba(0,0,0,0.55)", padding: "3px 8px", borderRadius: 4 }}>
         {timeDisplay}
       </div>
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000c, transparent)", pointerEvents: "none" }}>
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "60px 24px 16px",
+        background: "linear-gradient(to top, #000c, transparent)",
+        pointerEvents: "none",
+        opacity: overlayVisible ? 1 : 0,
+        transition: "opacity 0.6s ease",
+      }}>
         <div style={{ fontWeight: 700, fontSize: 16 }}>
           {isAdSlate ? "Commercial Break" : `Now Playing: ${nowPlaying}`}
         </div>
         <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>Up Next: {upNext}</div>
       </div>
-    </>
+    </div>
   );
 }
 
