@@ -323,9 +323,9 @@ function ContentCard({ item, onClick }) {
   const [hovered, setHovered] = useState(false);
   const { t } = useLang();
   const isLive = item.type === "LIVE";
-  const cardW = w < 768 ? 110 : 160;
+  const cardW = w < 768 ? 140 : 200;
   const cardH = Math.round(cardW * (4 / 3));
-  const titleFontSize = w < 768 ? 10 : 12;
+  const titleFontSize = w < 768 ? 11 : 13;
 
   return (
     <div
@@ -421,8 +421,8 @@ function ContentRow({ category, onSelect }) {
   const sidePad = w < 768 ? 16 : 48;
 
   return (
-    <div style={{ marginBottom: 40 }}>
-      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, paddingLeft: sidePad }}>{category.name}</div>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10, paddingLeft: sidePad }}>{category.name}</div>
       <div style={{ position: "relative" }}>
         {w >= 768 && (
           <button onClick={() => scroll(-1)} style={{
@@ -432,9 +432,9 @@ function ContentRow({ category, onSelect }) {
           }}>‹</button>
         )}
         <div ref={rowRef} style={{
-          display: "flex", gap: 12, overflowX: "auto",
+          display: "flex", gap: 8, overflowX: "auto",
           paddingLeft: sidePad, paddingRight: sidePad,
-          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 80,
+          scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: 60,
           WebkitOverflowScrolling: "touch",
         }}>
           {category.items.map(item => (
