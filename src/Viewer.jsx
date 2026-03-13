@@ -313,14 +313,14 @@ const searchResults = [
 
 const AD_SLATE_ID = "5ddd6c7f8aa7108453155d183f200727";
 const AD_SLATE_DURATION = 240;
-const EASTERN_BLOCK = 14400; // 4-hour loop in seconds
+const EASTERN_BLOCK = 14558; // total block = sum of all slot durations (video + ad breaks)
 
 const EASTERN_SCHEDULE = [
-  { title: "Africa a-la-carte",      videoId: "92ec6bce27c3f27394e777cca7d9791e", duration: 2640, adBreaks: [695, 977, 2010, 2378],       blockStart: 0     },
-  { title: "Charnita's World S1EP5", videoId: "e668112f6a3cbf10919271968c97c28f", duration: 2738, adBreaks: [837, 1222, 1588, 2239],      blockStart: 3600  },
-  { title: "2 Koconut Heads",        videoId: "6c13a36b28c12fcdd40760c31a0e2132", duration: 1380, adBreaks: [450, 690],                    blockStart: 7200  },
-  { title: "American Hate",          videoId: "5fe405831cdbec5bd9e2c9c83031d726", duration: 2640, adBreaks: [625, 1221, 2204, 2434],       blockStart: 9000  },
-  { title: "Horse Talk S1EP3",       videoId: "c2f415fd160e45665513b5dec826e49a", duration: 1320, adBreaks: [437, 951],                    blockStart: 11640 },
+  { title: "Africa a-la-carte",      videoId: "92ec6bce27c3f27394e777cca7d9791e", duration: 2640, adBreaks: [695, 977, 2010, 2378],  blockStart: 0     }, // slot: 3600s
+  { title: "Charnita's World S1EP5", videoId: "e668112f6a3cbf10919271968c97c28f", duration: 2738, adBreaks: [837, 1222, 1588, 2239], blockStart: 3600  }, // slot: 3698s
+  { title: "2 Koconut Heads",        videoId: "6c13a36b28c12fcdd40760c31a0e2132", duration: 1380, adBreaks: [450, 690],               blockStart: 7298  }, // slot: 1860s
+  { title: "American Hate",          videoId: "5fe405831cdbec5bd9e2c9c83031d726", duration: 2640, adBreaks: [625, 1221, 2204, 2434],  blockStart: 9158  }, // slot: 3600s
+  { title: "Horse Talk S1EP3",       videoId: "c2f415fd160e45665513b5dec826e49a", duration: 1320, adBreaks: [437, 951],               blockStart: 12758 }, // slot: 1800s
 ];
 
 function getETSecondsSinceMidnight() {
