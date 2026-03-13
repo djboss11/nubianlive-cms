@@ -226,29 +226,6 @@ const continueWatching = [
 
 const categories = [
   {
-    name: "Coming Soon",
-    items: [
-      { id: 1, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 2, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 3, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
-      { id: 4, title: "Arena Night", thumb: "🥊", type: "VOD", rating: "TV-14", year: 2024, match: 88 },
-      { id: 5, title: "City Lights", thumb: "🌆", type: "VOD", rating: "TV-PG", year: 2024, match: 85 },
-      { id: 6, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
-      { id: 7, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
-      { id: 8, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
-      { id: 9, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
-    ],
-  },
-  {
-    name: "Live Now",
-    items: [
-      { id: 10, title: "Eastern", thumb: "📺", type: "LIVE", viewers: "14.2K", tag: "LIVE" },
-      { id: 11, title: "Pacific", thumb: "⚽", type: "LIVE", viewers: "9.8K", tag: "LIVE" },
-      { id: 12, title: "Africa/Europe", thumb: "🎵", type: "LIVE", viewers: "2.3K", tag: "LIVE" },
-      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", viewers: "5.1K", tag: "LIVE" },
-    ],
-  },
-  {
     name: "Reality",
     items: [
       { id: 20, title: "Charnita's World S1EP1", poster: poster("charnitas-world-s1ep1.png"), hlsUrl: hls("ad3176ed4fedb56c2575fced59e21674"), trailerUrl: hls("7ae1cc64a8e3c379319acf82caa8e703"), type: "Series", genre: "Reality", year: 2024, rating: "TV-PG", duration: "44m", description: "The life of Birmingham Socialite Charnita Horton and her family" },
@@ -281,6 +258,29 @@ const categories = [
       { id: 30, title: "Troubled Water", poster: poster("troubled-water.png"), hlsUrl: hls("d96681ec8386f8769459af8980e417d1"), type: "Documentary", genre: "Documentary", year: 2023, description: "A look at environmental racism in America" },
       { id: 31, title: "American Hate", poster: p("american-hate-poster.png"), hlsUrl: hls("5fe405831cdbec5bd9e2c9c83031d726"), type: "Documentary", genre: "Documentary", year: 2023, rating: "TV-PG", duration: "44m", description: "An examination of Hate in America" },
       { id: 32, title: "A Soul Journey", poster: p("a-soul-journey-poster.jpeg"), hlsUrl: hls("5b68bf2f00d909217aa932be0e87d6ac"), type: "Documentary", genre: "Documentary", year: 2023, rating: "TV-PG", duration: "1h 30m", description: "A journey into Soul music through the lives and performances of some of the greatest Soul artists at Italy's Porretta Soul Festival." },
+    ],
+  },
+  {
+    name: "Live Now",
+    items: [
+      { id: 10, title: "Eastern", thumb: "📺", type: "LIVE", viewers: "14.2K", tag: "LIVE" },
+      { id: 11, title: "Pacific", thumb: "⚽", type: "LIVE", viewers: "9.8K", tag: "LIVE" },
+      { id: 12, title: "Africa/Europe", thumb: "🎵", type: "LIVE", viewers: "2.3K", tag: "LIVE" },
+      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", viewers: "5.1K", tag: "LIVE" },
+    ],
+  },
+  {
+    name: "Coming Soon",
+    items: [
+      { id: 1, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
+      { id: 2, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
+      { id: 3, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
+      { id: 4, title: "Arena Night", thumb: "🥊", type: "VOD", rating: "TV-14", year: 2024, match: 88 },
+      { id: 5, title: "City Lights", thumb: "🌆", type: "VOD", rating: "TV-PG", year: 2024, match: 85 },
+      { id: 6, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
+      { id: 7, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
+      { id: 8, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
+      { id: 9, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
     ],
   },
 ];
