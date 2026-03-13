@@ -291,14 +291,15 @@ const ppvEvents = [
   { id: 3, title: "Global Music Fest", subtitle: "Live from Lagos · 12 Artists", date: "Apr 5, 2026", time: "7:00 PM EST", price: 14.99, thumb: "🎤", gradient: "linear-gradient(135deg, #001a10, #002a20)" },
 ];
 
-const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3];
+const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3, 6];
 
 const channels = [
-  { id: 1, name: "Eastern",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET"  },
-  { id: 5, name: "Central",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT"  },
-  { id: 2, name: "Pacific",          current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT"  },
-  { id: 3, name: "West Africa/Europe", current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,   displayOffsetHr: 4,  tzLabel: "WAT" },
-  { id: 4, name: "Nubian Radio",     current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
+  { id: 1, name: "Eastern",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET"  },
+  { id: 5, name: "Central",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT"  },
+  { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT"  },
+  { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT" },
+  { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET" },
+  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
 ];
 
 const searchResults = [
