@@ -201,7 +201,7 @@ const R2 = "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev";
 const CF = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com";
 const hls = (id) => `${CF}/${id}/manifest/video.m3u8`;
 const poster = (file) => `${R2}/${file}`;
-const p = (file) => `${R2}/posters/${file}`;
+const p = (file) => `${R2}/${file}`;
 
 const featured = {
   id: 100,
