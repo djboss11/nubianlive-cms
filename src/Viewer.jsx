@@ -469,6 +469,118 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
   );
 }
 
+// ── EPG TIMELINE ──────────────────────────────────────────────────────────────
+
+function EPGTimeline({ channel }) {
+  const scrollRef = useRef(null);
+  const [, setTick] = useState(0);
+  const PX_PER_MIN = 4;
+  const RULER_H = 26;
+  const ROW_H = 56;
+  const BLOCK_MIN = EASTERN_BLOCK / 60; // 240 min
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  function getLocalMin() {
+    const etSec = getETSecondsSinceMidnight();
+    return (etSec + (channel.displayOffsetHr || 0) * 3600 + 86400 * 10) % 86400 / 60;
+  }
+
+  function fmtMin(min) {
+    const m = ((Math.round(min) % 1440) + 1440) % 1440;
+    const h = Math.floor(m / 60) % 24;
+    const mm = m % 60;
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(mm).padStart(2, "0")} ${ampm}`;
+  }
+
+  const localMin = getLocalMin();
+  const HALF_WIN = 6 * 60;
+  const windowStartMin = localMin - HALF_WIN;
+  const windowEndMin = localMin + HALF_WIN;
+  const totalWidth = 12 * 60 * PX_PER_MIN; // 2880px
+  const toX = (m) => (m - windowStartMin) * PX_PER_MIN;
+  const nowX = toX(localMin); // always = HALF_WIN * PX_PER_MIN
+
+  let blocks = [];
+  if (channel.isRadio) {
+    blocks = [{ title: "24/7 Nubian Radio Live", x: 0, width: totalWidth, isCurrent: true }];
+  } else {
+    const anchorRaw = ((channel.blockOffsetSec || 0) + (channel.displayOffsetHr || 0) * 3600) / 60;
+    const kStart = Math.floor((windowStartMin - anchorRaw) / BLOCK_MIN) - 1;
+    const kEnd = Math.ceil((windowEndMin - anchorRaw) / BLOCK_MIN) + 1;
+    for (let k = kStart; k <= kEnd; k++) {
+      const cycleStart = anchorRaw + k * BLOCK_MIN;
+      EASTERN_SCHEDULE.forEach((show, i) => {
+        const showStartMin = cycleStart + show.blockStart / 60;
+        const nextBs = i < EASTERN_SCHEDULE.length - 1 ? EASTERN_SCHEDULE[i + 1].blockStart : EASTERN_BLOCK;
+        const showEndMin = cycleStart + nextBs / 60;
+        if (showEndMin < windowStartMin || showStartMin > windowEndMin) return;
+        blocks.push({
+          title: show.title,
+          x: toX(showStartMin),
+          width: (showEndMin - showStartMin) * PX_PER_MIN,
+          isCurrent: localMin >= showStartMin && localMin < showEndMin,
+        });
+      });
+    }
+  }
+
+  const rulerTicks = [];
+  const firstTick = Math.ceil(windowStartMin / 30) * 30;
+  for (let m = firstTick; m <= windowEndMin; m += 30) {
+    rulerTicks.push({ x: toX(m), label: fmtMin(m) });
+  }
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollLeft = nowX - scrollRef.current.clientWidth / 2;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel.id]);
+
+  return (
+    <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", overflow: "hidden" }}>
+      <div ref={scrollRef} style={{ overflowX: "auto", overflowY: "hidden", scrollbarWidth: "thin", scrollbarColor: "var(--border) transparent" }}>
+        <div style={{ position: "relative", width: totalWidth, height: RULER_H + ROW_H }}>
+          {/* Ruler */}
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: RULER_H, background: "var(--surface2)", borderBottom: "1px solid var(--border)" }}>
+            {rulerTicks.map(({ x, label }) => (
+              <div key={x} style={{ position: "absolute", left: x, top: 0, height: "100%" }}>
+                <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: "100%", background: "var(--border)" }} />
+                <span style={{ position: "absolute", left: 4, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: "var(--text3)", whiteSpace: "nowrap" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          {/* Show blocks */}
+          <div style={{ position: "absolute", top: RULER_H, left: 0, width: "100%", height: ROW_H }}>
+            {blocks.map((b, i) => (
+              <div key={i} style={{
+                position: "absolute", left: b.x + 1, top: 6,
+                width: Math.max(b.width - 2, 2), height: ROW_H - 12,
+                background: b.isCurrent ? "var(--accent)" : "var(--surface)",
+                border: `1px solid ${b.isCurrent ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: 6, overflow: "hidden", display: "flex", alignItems: "center", padding: "0 8px",
+              }}>
+                <span style={{ fontSize: 11, fontWeight: b.isCurrent ? 700 : 400, color: b.isCurrent ? "white" : "var(--text2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {b.title}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* NOW indicator */}
+          <div style={{ position: "absolute", left: nowX, top: 0, width: 2, height: RULER_H + ROW_H, background: "#e50914", zIndex: 10, pointerEvents: "none" }}>
+            <div style={{ position: "absolute", top: 3, left: -12, background: "#e50914", borderRadius: 3, padding: "1px 4px", fontSize: 9, color: "white", fontWeight: 800, letterSpacing: "0.03em" }}>NOW</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── COMPONENTS ────────────────────────────────────────────────────────────────
 
 function LiveBadge() {
@@ -1033,6 +1145,7 @@ function LiveTV({ t, initialChannelId }) {
               </div>
             </div>
           )}
+          <EPGTimeline channel={activeChannel} />
         </div>
 
         {/* Channel list — desktop sidebar */}
