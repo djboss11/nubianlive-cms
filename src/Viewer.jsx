@@ -548,12 +548,6 @@ function Hero({ onPlay, t }) {
             display: "flex", alignItems: "center", gap: 8,
             transition: "background 0.15s",
           }}>▶ {t.play}</button>
-          <button style={{
-            background: "#ffffff33", color: "white",
-            padding: "12px 24px", borderRadius: 6,
-            fontWeight: 600, fontSize: 15, backdropFilter: "blur(4px)",
-            border: "1px solid #ffffff22",
-          }}>ℹ {t.moreInfo}</button>
         </div>
       </div>
 
