@@ -201,6 +201,7 @@ const R2 = "https://pub-b5e20d7acaed4dbdb22f50a4327fd686.r2.dev";
 const CF = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com";
 const hls = (id) => `${CF}/${id}/manifest/video.m3u8`;
 const poster = (file) => `${R2}/${file}`;
+const p = (file) => `${R2}/posters/${file}`;
 
 const featured = {
   id: 100,
@@ -250,36 +251,36 @@ const categories = [
   {
     name: "Reality",
     items: [
-      { id: 20, title: "Charnita's World S1EP1", poster: poster("charnitas-world-s1ep1.png"), hlsUrl: hls("ad3176ed4fedb56c2575fced59e21674"), type: "VOD", genre: "Reality", year: 2024, description: "The life of Birmingham Socialite Charnita Horton and her family" },
-      { id: 21, title: "Charnita's World S1EP3", poster: poster("charnitas-world-s1ep3.png"), hlsUrl: hls("978862668c06910b50b5d1b6714c1260"), type: "VOD", genre: "Reality", year: 2024, description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 20, title: "Charnita's World S1EP1", poster: poster("charnitas-world-s1ep1.png"), hlsUrl: hls("ad3176ed4fedb56c2575fced59e21674"), trailerUrl: hls("7ae1cc64a8e3c379319acf82caa8e703"), type: "Series", genre: "Reality", year: 2024, rating: "TV-PG", duration: "44m", description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 21, title: "Charnita's World S1EP3", poster: poster("charnitas-world-s1ep3.png"), hlsUrl: hls("978862668c06910b50b5d1b6714c1260"), trailerUrl: hls("7ae1cc64a8e3c379319acf82caa8e703"), type: "Series", genre: "Reality", year: 2024, rating: "TV-PG", duration: "44m", description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 23, title: "Charnita's World S1EP5", poster: p("charnitas-world-s1ep5.png"), hlsUrl: hls("e668112f6a3cbf10919271968c97c28f"), trailerUrl: hls("7ae1cc64a8e3c379319acf82caa8e703"), type: "Series", genre: "Reality", year: 2024, rating: "TV-PG", duration: "44m", description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 24, title: "Charnita's World S1EP6", poster: p("charnitas-world-s1ep6.png"), hlsUrl: hls("88f50d318c77f36d3aa90f044dbf283e"), trailerUrl: hls("7ae1cc64a8e3c379319acf82caa8e703"), type: "Series", genre: "Reality", year: 2024, rating: "TV-PG", duration: "44m", description: "The life of Birmingham Socialite Charnita Horton and her family" },
+      { id: 25, title: "2 Koconut Heads", poster: p("2k-poster.png"), hlsUrl: hls("6c13a36b28c12fcdd40760c31a0e2132"), type: "Series", genre: "Reality", year: 2025, rating: "TV-PG", duration: "44m", description: "A beautiful couple with Caribbean roots travel the world interviewing celebrities and experiencing the finer things in life." },
       { id: 22, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
     ],
   },
   {
     name: "Lifestyle",
     items: [
-      { id: 40, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 41, title: "City Lights", thumb: "🌆", type: "VOD", rating: "TV-PG", year: 2024, match: 85 },
-      { id: 42, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
-      { id: 43, title: "Ocean Deep", thumb: "🐋", type: "VOD", rating: "TV-G", year: 2024, match: 88 },
+      { id: 40, title: "Yacht Living S1EP5", poster: p("yl-poster.png"), hlsUrl: hls("916bd388ec04cb01baa2bf9d5a57c39e"), type: "Series", genre: "Lifestyle", year: 2025, rating: "TV-14", duration: "44m", description: "A look at the most beautiful yachts for charter and sale" },
+      { id: 41, title: "Horse Talk S1EP3", poster: p("horse-talk-poster.png"), hlsUrl: hls("c2f415fd160e45665513b5dec826e49a"), type: "Series", genre: "Lifestyle", year: 2023, description: "Life with horses hosted by Obba Babatunde" },
+      { id: 42, title: "Africa a-la-carte", poster: p("alc-poster.png"), hlsUrl: hls("92ec6bce27c3f27394e777cca7d9791e"), type: "Series", genre: "Lifestyle", year: 2025, rating: "TV-14", duration: "44m", description: "Drina Li takes viewers around Africa and to her home country of Gabon" },
     ],
   },
   {
     name: "Movies",
     items: [
-      { id: 50, title: "Rutland Manor", poster: poster("rutland-manor.png"), hlsUrl: hls("a90f760613916b84d22e7de55e7c2404"), type: "VOD", genre: "Movie", year: 2025, description: "A group of ambitious influencers accept an invite to a luxurious manor for a career-making social event. Survival is the only trend worth chasing." },
-      { id: 51, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 52, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 53, title: "Arena Night", thumb: "🥊", type: "VOD", rating: "TV-14", year: 2024, match: 88 },
+      { id: 50, title: "Rutland Manor", poster: poster("rutland-manor.png"), hlsUrl: hls("a90f760613916b84d22e7de55e7c2404"), type: "Movie", genre: "Movie", year: 2025, description: "A group of ambitious influencers accept an invite to a luxurious manor for a career-making social event. Survival is the only trend worth chasing." },
+      { id: 51, title: "Panacea", poster: p("panacea-poster.png"), hlsUrl: hls("268902d88e0cdf8a5e2357d630dbf1f7"), type: "Movie", genre: "Movie", year: 2020, rating: "TV-PG", duration: "15m", description: "Panacea follows a man haunted by his past, who discovers an ethereal object that can cure him of all his pain and suffering. But at what cost?" },
+      { id: 52, title: "3 OG's", poster: p("3-ogs-poster.png"), hlsUrl: hls("bdf883b962795b4044c88967a333fb45"), type: "Movie", genre: "Movie", year: 2024, description: "A stage play about the confrontation of 3 old friends" },
     ],
   },
   {
     name: "Documentaries",
     items: [
-      { id: 30, title: "Troubled Water", poster: poster("troubled-water.png"), hlsUrl: hls("d96681ec8386f8769459af8980e417d1"), type: "VOD", genre: "Documentary", year: 2023, description: "A look at environmental racism in America" },
-      { id: 31, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
-      { id: 32, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
-      { id: 33, title: "Ocean Deep", thumb: "🐋", type: "VOD", rating: "TV-G", year: 2024, match: 88 },
+      { id: 30, title: "Troubled Water", poster: poster("troubled-water.png"), hlsUrl: hls("d96681ec8386f8769459af8980e417d1"), type: "Documentary", genre: "Documentary", year: 2023, description: "A look at environmental racism in America" },
+      { id: 31, title: "American Hate", poster: p("american-hate-poster.png"), hlsUrl: hls("5fe405831cdbec5bd9e2c9c83031d726"), type: "Documentary", genre: "Documentary", year: 2023, rating: "TV-PG", duration: "44m", description: "An examination of Hate in America" },
+      { id: 32, title: "A Soul Journey", poster: p("a-soul-journey-poster.jpeg"), hlsUrl: hls("5b68bf2f00d909217aa932be0e87d6ac"), type: "Documentary", genre: "Documentary", year: 2023, rating: "TV-PG", duration: "1h 30m", description: "A journey into Soul music through the lives and performances of some of the greatest Soul artists at Italy's Porretta Soul Festival." },
     ],
   },
 ];
