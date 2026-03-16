@@ -1505,7 +1505,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
-            {subscription?.subscribed ? (
+            {subscription?.guest ? (
+              <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
+            ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
             ) : (
               <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
@@ -1568,7 +1570,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
-            {subscription?.subscribed ? (
+            {subscription?.guest ? (
+              <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
+            ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
             ) : (
               <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
@@ -2057,10 +2061,39 @@ function PaywallModal({ item, onClose }) {
   );
 }
 
-function SubscribePage({ navigate }) {
+function SubscribePage({ navigate, onGuestActivated }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
   const features = ["Full library access", "Live TV channels", "New content weekly", "Watch on any device"];
+  const [guestCode, setGuestCode] = useState("");
+  const [guestStatus, setGuestStatus] = useState(null); // "loading" | "success" | "error"
+  const [guestError, setGuestError] = useState("");
+
+  async function activateGuestCode() {
+    if (!guestCode.trim()) return;
+    setGuestStatus("loading");
+    setGuestError("");
+    try {
+      const res = await fetch("https://api.nubianlive.com/api/guest/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: guestCode.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid !== false) {
+        const sub = { subscribed: true, plan: "guest", guest: true };
+        saveSubscription(sub);
+        onGuestActivated(sub);
+        setGuestStatus("success");
+      } else {
+        setGuestStatus("error");
+        setGuestError(data.error || "Invalid guest code. Please try again.");
+      }
+    } catch {
+      setGuestStatus("error");
+      setGuestError("Could not connect. Please check your connection.");
+    }
+  }
   return (
     <div style={{ minHeight: "100vh", paddingTop: 100, paddingBottom: 80 }}>
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
@@ -2111,13 +2144,34 @@ function SubscribePage({ navigate }) {
           </div>
         </div>
 
-        {/* Guest account */}
+        {/* Guest code */}
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 480, margin: "0 auto" }}>
-          <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Sponsor or Investor?</p>
-          <p style={{ fontSize: 14, color: "var(--text2)", marginBottom: 18 }}>Request a Guest Account — watch everything free as our guest.</p>
-          <button onClick={() => navigate("contact")} style={{ background: "transparent", border: "1px solid var(--border)", color: "white", borderRadius: 8, padding: "10px 22px", fontSize: 14, cursor: "pointer" }}>
-            Request Guest Account →
-          </button>
+          <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Have a Guest Code?</p>
+          <p style={{ fontSize: 14, color: "var(--text2)", marginBottom: 18 }}>Enter your code below to get full access as a guest.</p>
+          {guestStatus === "success" ? (
+            <p style={{ color: "#4ade80", fontWeight: 600, fontSize: 14 }}>Welcome! You now have guest access.</p>
+          ) : (
+            <>
+              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                <input
+                  type="text"
+                  value={guestCode}
+                  onChange={e => setGuestCode(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && activateGuestCode()}
+                  placeholder="Enter guest code"
+                  style={{ flex: 1, background: "var(--bg2)", border: "1px solid var(--border)", color: "white", borderRadius: 8, padding: "10px 14px", fontSize: 14, outline: "none" }}
+                />
+                <button
+                  onClick={activateGuestCode}
+                  disabled={guestStatus === "loading"}
+                  style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: guestStatus === "loading" ? 0.6 : 1 }}
+                >
+                  {guestStatus === "loading" ? "..." : "Activate"}
+                </button>
+              </div>
+              {guestStatus === "error" && <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>{guestError}</p>}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -2280,7 +2334,7 @@ export default function NubianLiveViewer() {
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
-        {page === "subscribe" && <SubscribePage navigate={navigate} />}
+        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} />}
           </>
         )}
       </div>
