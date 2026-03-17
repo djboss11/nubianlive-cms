@@ -873,7 +873,66 @@ function Hero({ onPlay, t }) {
 
 // ── CONTINUE WATCHING ─────────────────────────────────────────────────────────
 
-function ContinueWatching({ onSelect, refreshKey }) {
+function ContinueWatchingCard({ item, onSelect }) {
+  const w = useWindowWidth();
+  const [hovered, setHovered] = useState(false);
+  const cardW = w < 768 ? 140 : 200;
+  const cardH = Math.round(cardW * (4 / 3));
+  const titleFontSize = w < 768 ? 11 : 13;
+  return (
+    <div
+      onClick={() => onSelect(item)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: cardW, flexShrink: 0, cursor: "pointer",
+        transform: hovered ? "scale(1.06)" : "scale(1)",
+        transition: "transform 0.2s ease",
+        zIndex: hovered ? 10 : 1, position: "relative",
+      }}
+    >
+      <div style={{
+        width: cardW, height: cardH,
+        background: "linear-gradient(160deg, #1a1a2e, #111)",
+        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: w < 768 ? 28 : 48, border: "1px solid var(--border)",
+        position: "relative", overflow: "hidden",
+      }}>
+        {item.poster
+          ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span>{item.thumb || "🎬"}</span>
+        }
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "28px 10px 10px",
+          background: "linear-gradient(to top, #000d, transparent)",
+          fontSize: titleFontSize, fontWeight: 600,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>{item.title}</div>
+        {hovered && (
+          <div style={{ position: "absolute", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 20, marginLeft: 4 }}>▶</span>
+            </div>
+          </div>
+        )}
+      </div>
+      {hovered && (
+        <div style={{
+          background: "var(--surface)", borderRadius: "0 0 8px 8px",
+          padding: "10px 12px", border: "1px solid var(--border)", borderTop: "none",
+          position: "absolute", left: 0, right: 0, top: cardH - 1, zIndex: 20,
+          boxShadow: "0 8px 24px #000a",
+        }}>
+          {item.year && <span style={{ fontSize: 11, color: "var(--green)", marginRight: 6 }}>{item.year}</span>}
+          {item.rating && <span style={{ fontSize: 10, border: "1px solid var(--text3)", color: "var(--text3)", padding: "0 4px", borderRadius: 2 }}>{item.rating}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContinueWatching({ onSelect }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
   const items = getWatched();
@@ -889,23 +948,7 @@ function ContinueWatching({ onSelect, refreshKey }) {
         WebkitOverflowScrolling: "touch",
       }}>
         {items.map(item => (
-          <div key={item.id} onClick={() => onSelect(item)} style={{ width: w < 768 ? 160 : 220, flexShrink: 0, cursor: "pointer" }}>
-            <div style={{ position: "relative", height: w < 768 ? 90 : 124, background: "#1a1a1a", borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 6 }}>
-              {item.poster
-                ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span>{item.thumb || "🎬"}</span>
-              }
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s", background: "#000a" }}
-                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                onMouseLeave={e => e.currentTarget.style.opacity = 0}
-              >
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 16, marginLeft: 3 }}>▶</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-          </div>
+          <ContinueWatchingCard key={item.id} item={item} onSelect={onSelect} />
         ))}
       </div>
     </div>
