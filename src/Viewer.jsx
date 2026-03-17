@@ -1854,8 +1854,8 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <button onClick={() => setShowSearch(true)} style={{ background: "transparent", color: "var(--text2)", fontSize: 18 }}>🔍</button>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => setPage("live")}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
-              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block" }} />
+              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>6 LIVE</span>
             </div>
             {subscription?.plan === "owner" ? (
               <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
@@ -1921,8 +1921,8 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
           ))}
           <div style={{ borderTop: "1px solid var(--border)", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => { setPage("live"); setMenuOpen(false); }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
-              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block" }} />
+              <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>6 LIVE</span>
             </div>
             {subscription?.plan === "owner" ? (
               <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
