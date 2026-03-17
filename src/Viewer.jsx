@@ -224,7 +224,7 @@ const continueWatching = [
   { id: 4, title: "Arena Night", progress: 45, duration: "4h 00m", thumb: "🥊", episode: null },
 ];
 
-const categories = [
+const DEFAULT_CATEGORIES = [
   {
     name: "Reality",
     items: [
@@ -2191,7 +2191,50 @@ export default function NubianLiveViewer() {
   const [detailItem, setDetailItem] = useState(null);
   const [subscription, setSubscription] = useState(() => getSubscription());
   const [paywallItem, setPaywallItem] = useState(null);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [contentLoading, setContentLoading] = useState(true);
   const t = T[lang];
+
+  useEffect(() => {
+    const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries"];
+    fetch(`${API_BASE}/api/content`)
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const grouped = {};
+        GENRE_CATS.forEach(g => { grouped[g] = []; });
+        data.forEach(item => {
+          if (!item.video_id) return;
+          const cat = GENRE_CATS.find(g => g === item.genre);
+          if (!cat) return;
+          const mins = parseInt(item.duration);
+          const durationStr = isNaN(mins) ? undefined
+            : mins >= 60 ? `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ""}`
+            : `${mins}m`;
+          grouped[cat].push({
+            id: item.id,
+            title: item.title,
+            poster: item.poster_filename ? `${R2}/${item.poster_filename}` : undefined,
+            hlsUrl: hls(item.video_id),
+            trailerUrl: item.trailer_id ? hls(item.trailer_id) : undefined,
+            type: item.type || "VOD",
+            genre: item.genre,
+            year: item.year ? parseInt(item.year) : undefined,
+            rating: item.rating || undefined,
+            duration: durationStr,
+            description: item.description || undefined,
+          });
+        });
+        const liveNow = DEFAULT_CATEGORIES.find(c => c.name === "Live Now");
+        const comingSoon = DEFAULT_CATEGORIES.find(c => c.name === "Coming Soon");
+        const built = GENRE_CATS.filter(g => grouped[g].length > 0).map(g => ({ name: g, items: grouped[g] }));
+        if (liveNow) built.push(liveNow);
+        if (comingSoon) built.push(comingSoon);
+        setCategories(built);
+      })
+      .catch(() => {})
+      .finally(() => setContentLoading(false));
+  }, []);
 
   const navigate = useCallback((p) => {
     setPage(p);
@@ -2302,7 +2345,9 @@ export default function NubianLiveViewer() {
           <>
             <Hero onPlay={() => { addToWatched(featured); setPlaying(featured); }} t={t} />
             <ContinueWatching onSelect={openDetail} t={t} />
-            {categories.map(cat => (
+            {contentLoading ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text3)", fontSize: 14, letterSpacing: 1 }}>Loading content...</div>
+            ) : categories.map(cat => (
               <ContentRow key={cat.name} category={cat} onSelect={handleContentSelect} t={t} />
             ))}
           </>
