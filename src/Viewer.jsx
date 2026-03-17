@@ -1373,42 +1373,49 @@ function PPVSection({ t, subscription }) {
               ? (ev.poster_filename.startsWith("http") ? ev.poster_filename : `${R2}/${ev.poster_filename}`)
               : null;
             return (
-              <div key={ev.id} style={{ background: "linear-gradient(135deg, #0a0a14, #111120)", borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
-                <div style={{ height: 200, position: "relative", background: "#0d0d1a", overflow: "hidden" }}>
+              <div key={ev.id} style={{ background: "linear-gradient(160deg, #1a1a2e, #111)", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+                {/* Portrait poster — 3:4 ratio */}
+                <div style={{ position: "relative", width: "100%", paddingBottom: "133%", background: "#0d0d1a", flexShrink: 0 }}>
                   {posterUrl ? (
-                    <img src={posterUrl} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }} />
+                    <img src={posterUrl} alt={ev.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>★</div>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, color: "var(--text3)" }}>★</div>
                   )}
-                  <div style={{ position: "absolute", top: 12, right: 12, background: "var(--accent)", color: "black", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>PAY-PER-VIEW</div>
+                  {/* Bottom gradient for readability */}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)" }} />
+                  {/* Badges */}
+                  <div style={{ position: "absolute", top: 10, right: 10, background: "var(--accent)", color: "black", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>PPV</div>
                   {ev.status === "live" && (
-                    <div style={{ position: "absolute", top: 12, left: 12, background: "#ff2d55", color: "white", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>● LIVE</div>
+                    <div style={{ position: "absolute", top: 10, left: 10, background: "#ff2d55", color: "white", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>● LIVE</div>
                   )}
                 </div>
-                <div style={{ padding: "18px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 6 }}>{ev.title}</div>
-                  {ev.description && <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5, flex: 1 }}>{ev.description}</div>}
+                {/* Info panel below poster */}
+                <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1, lineHeight: 1.1 }}>{ev.title}</div>
+                  {ev.description && <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{ev.description}</div>}
                   {ev.event_date && (
-                    <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 16 }}>📅 {fmtEventDate(ev.event_date)}</div>
+                    <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "'DM Mono', monospace" }}>📅 {fmtEventDate(ev.event_date)}</div>
                   )}
-                  {isOwned ? (
-                    <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", border: "none" }}>
-                      ▶ Watch Now
-                    </button>
-                  ) : (
-                    <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
-                      {ev.buy_price != null && (
-                        <button onClick={() => handlePurchase(ev, "buy")} style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "11px 16px", fontWeight: 800, fontSize: 14, width: "100%", border: "none" }}>
-                          Buy ${Number(ev.buy_price).toFixed(2)}
-                        </button>
-                      )}
-                      {ev.rent_price != null && (
-                        <button onClick={() => handlePurchase(ev, "rent")} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontWeight: 600, fontSize: 13, width: "100%" }}>
-                          Rent 48hrs ${Number(ev.rent_price).toFixed(2)}
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div style={{ display: "flex", gap: 8, flexDirection: "column", marginTop: "auto", paddingTop: 8 }}>
+                    {isOwned ? (
+                      <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "10px 16px", fontWeight: 800, fontSize: 13, width: "100%", border: "none" }}>
+                        ▶ Watch Now
+                      </button>
+                    ) : (
+                      <>
+                        {ev.buy_price != null && (
+                          <button onClick={() => handlePurchase(ev, "buy")} style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "10px 14px", fontWeight: 800, fontSize: 13, width: "100%", border: "none" }}>
+                            Buy ${Number(ev.buy_price).toFixed(2)}
+                          </button>
+                        )}
+                        {ev.rent_price != null && (
+                          <button onClick={() => handlePurchase(ev, "rent")} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 12, width: "100%" }}>
+                            Rent 48hrs ${Number(ev.rent_price).toFixed(2)}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
