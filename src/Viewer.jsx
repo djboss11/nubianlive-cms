@@ -273,17 +273,7 @@ const DEFAULT_CATEGORIES = [
   },
   {
     name: "Coming Soon",
-    items: [
-      { id: 1, title: "Neon Requiem", thumb: "🎬", type: "VOD", rating: "TV-MA", year: 2024, match: 97 },
-      { id: 2, title: "Quiet Hours", thumb: "🎭", type: "VOD", rating: "TV-14", year: 2024, match: 94 },
-      { id: 3, title: "Cosmos: Remastered", thumb: "🌌", type: "VOD", rating: "TV-G", year: 2023, match: 91 },
-      { id: 4, title: "Arena Night", thumb: "🥊", type: "VOD", rating: "TV-14", year: 2024, match: 88 },
-      { id: 5, title: "City Lights", thumb: "🌆", type: "VOD", rating: "TV-PG", year: 2024, match: 85 },
-      { id: 6, title: "The Drift", thumb: "🌊", type: "VOD", rating: "TV-MA", year: 2023, match: 82 },
-      { id: 7, title: "Iron Savanna", thumb: "🦁", type: "VOD", rating: "TV-PG", year: 2024, match: 79 },
-      { id: 8, title: "Echoes of Kush", thumb: "🏛️", type: "VOD", rating: "TV-14", year: 2023, match: 76 },
-      { id: 9, title: "Rockin With The Stars - Sneak Peek", poster: poster("rockin-with-the-stars-sneak-peek.png"), hlsUrl: hls("8df20177f191476dbf1d72b3dda6d9f5"), type: "VOD", genre: "Reality", year: 2025, description: "Up and coming talent showcase" },
-    ],
+    items: [],
   },
 ];
 
@@ -718,6 +708,7 @@ function ContentCard({ item, onClick }) {
 function ContentRow({ category, onSelect }) {
   const w = useWindowWidth();
   const rowRef = useRef(null);
+  if (!category.items || category.items.length === 0) return null;
   const scroll = (dir) => {
     if (rowRef.current) rowRef.current.scrollBy({ left: dir * 400, behavior: "smooth" });
   };
