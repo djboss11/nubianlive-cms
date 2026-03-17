@@ -1293,7 +1293,6 @@ function PPVSection({ t, subscription }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [purchases, setPurchases] = useState(() => getPPVPurchases());
-  const [signInPrompt, setSignInPrompt] = useState(null);
   const [checkingSession, setCheckingSession] = useState(false);
 
   // Load events from API
@@ -1331,10 +1330,6 @@ function PPVSection({ t, subscription }) {
   }, []);
 
   const handlePurchase = (ev, type) => {
-    if (!subscription?.subscribed) {
-      setSignInPrompt({ ev, type });
-      return;
-    }
     startPPVCheckout(ev, type);
   };
 
@@ -1423,28 +1418,6 @@ function PPVSection({ t, subscription }) {
         </div>
       )}
 
-      {/* Sign-in prompt modal */}
-      {signInPrompt && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 380, width: "100%", position: "relative" }}>
-            <button onClick={() => setSignInPrompt(null)} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1, border: "none" }}>✕</button>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>🔐</div>
-            <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Sign in to purchase</div>
-            <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 24 }}>
-              You need a Nubian Television account to purchase Pay-Per-View events.
-            </div>
-            <button
-              onClick={() => { setSignInPrompt(null); startPPVCheckout(signInPrompt.ev, signInPrompt.type); }}
-              style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", marginBottom: 10, border: "none" }}
-            >
-              Continue as Guest
-            </button>
-            <button onClick={() => setSignInPrompt(null)} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 8, padding: "10px 20px", fontSize: 13, width: "100%" }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
