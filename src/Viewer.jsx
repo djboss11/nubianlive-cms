@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import Hls from "hls.js";
+import { useAuth0 } from "@auth0/auth0-react";
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');`;
 
 // ── PREVIOUSLY WATCHED ────────────────────────────────────────────────────────
@@ -1624,9 +1625,156 @@ function PlayerModal({ item, onClose }) {
   );
 }
 
+// ── NAV USER WIDGET ───────────────────────────────────────────────────────────
+
+function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubscription }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (!isAuthenticated) {
+    return (
+      <button onClick={onLogin} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+        Sign In
+      </button>
+    );
+  }
+
+  const initial = (user?.email?.[0] || user?.name?.[0] || "U").toUpperCase();
+  const avatar = user?.picture;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", border: "2px solid var(--accent)", background: "linear-gradient(135deg, var(--accent), #ff6b35)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}>
+        {avatar
+          ? <img src={avatar} alt={initial} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>{initial}</span>
+        }
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: 42, right: 0, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 0", minWidth: 220, zIndex: 200, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+          <div style={{ padding: "10px 18px 12px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{user?.name || initial}</div>
+            <div style={{ fontSize: 12, color: "var(--text3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+          </div>
+          <button onClick={() => { onManageSubscription(); setOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", color: "var(--text2)", padding: "10px 18px", fontSize: 13, border: "none", cursor: "pointer" }}
+            onMouseEnter={e => e.target.style.background = "var(--surface)"}
+            onMouseLeave={e => e.target.style.background = "transparent"}
+          >Manage Subscription</button>
+          <button onClick={() => { onLogout(); setOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", color: "#f87171", padding: "10px 18px", fontSize: 13, border: "none", cursor: "pointer", borderTop: "1px solid var(--border)", marginTop: 4 }}
+            onMouseEnter={e => e.target.style.background = "var(--surface)"}
+            onMouseLeave={e => e.target.style.background = "transparent"}
+          >Sign Out</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── LOGIN MODAL ───────────────────────────────────────────────────────────────
+
+function LoginModal({ onClose }) {
+  const { loginWithPopup } = useAuth0();
+  const [tab, setTab] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(null); // "google" | "email" | null
+  const [error, setError] = useState("");
+
+  const handleGoogle = async () => {
+    setLoading("google"); setError("");
+    try {
+      await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
+      onClose();
+    } catch (e) {
+      if (e.message && !e.message.includes("closed")) setError("Google sign-in failed. Please try again.");
+    } finally { setLoading(null); }
+  };
+
+  const handleEmail = async () => {
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    setLoading("email"); setError("");
+    try {
+      await loginWithPopup({
+        authorizationParams: {
+          login_hint: email.trim(),
+          ...(tab === "signup" ? { screen_hint: "signup" } : {}),
+        },
+      });
+      onClose();
+    } catch (e) {
+      if (e.message && !e.message.includes("closed")) setError("Sign-in failed. Please try again.");
+    } finally { setLoading(null); }
+  };
+
+  const inp = { width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 20, padding: 36, maxWidth: 400, width: "100%", position: "relative" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "transparent", color: "var(--text3)", fontSize: 22, lineHeight: 1, border: "none", cursor: "pointer" }}>✕</button>
+
+        <img src="/logo.png" alt="Nubian Television" style={{ height: 28, width: "auto", marginBottom: 24, display: "block" }} />
+
+        {/* Tabs */}
+        <div style={{ display: "flex", background: "var(--surface)", borderRadius: 8, padding: 3, marginBottom: 24 }}>
+          {[{ id: "signin", label: "Sign In" }, { id: "signup", label: "Create Account" }].map(tb => (
+            <button key={tb.id} onClick={() => { setTab(tb.id); setError(""); }} style={{
+              flex: 1, padding: "8px 0", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              background: tab === tb.id ? "var(--bg)" : "transparent",
+              color: tab === tb.id ? "white" : "var(--text3)",
+              border: "none", cursor: "pointer", transition: "all 0.2s",
+            }}>{tb.label}</button>
+          ))}
+        </div>
+
+        {/* Google */}
+        <button onClick={handleGoogle} disabled={!!loading} style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          background: "white", color: "#1a1a1a", borderRadius: 10, padding: "12px 20px",
+          fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer", marginBottom: 16,
+          opacity: loading === "google" ? 0.6 : 1,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+          {loading === "google" ? "Signing in..." : "Continue with Google"}
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>or</span>
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" style={inp} />
+          <input type="password" placeholder="Password" style={inp} />
+        </div>
+
+        {error && <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</div>}
+
+        <button onClick={handleEmail} disabled={!!loading} style={{
+          width: "100%", background: "var(--accent)", color: "white", borderRadius: 10,
+          padding: "12px 20px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
+          opacity: loading === "email" ? 0.6 : 1,
+        }}>
+          {loading === "email" ? "Please wait..." : tab === "signup" ? "Create Account" : "Sign In"}
+        </button>
+
+        <div style={{ fontSize: 12, color: "var(--text3)", textAlign: "center", marginTop: 16 }}>
+          By continuing you agree to our Terms of Service and Privacy Policy.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
-function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick, subscription, onManageSubscription }) {
+function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick, subscription, onManageSubscription, user, isAuthenticated, onLogin, onLogout }) {
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1710,7 +1858,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
             )}
             <LanguageSwitcher />
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #ff6b35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>N</div>
+            <NavUserWidget user={user} isAuthenticated={isAuthenticated} onLogin={onLogin} onLogout={onLogout} onManageSubscription={onManageSubscription} />
           </div>
         )}
 
@@ -1773,6 +1921,11 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
             ) : (
               <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
+            )}
+            {isAuthenticated ? (
+              <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
+            ) : (
+              <button onClick={() => { onLogin(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign In</button>
             )}
             <LanguageSwitcher />
           </div>
@@ -2210,12 +2363,12 @@ function saveSubscription(data) {
   localStorage.setItem("nubian_subscription", JSON.stringify(data));
 }
 
-async function startCheckout(plan) {
+async function startCheckout(plan, email) {
   try {
     const res = await fetch(`${API_BASE}/api/stripe/create-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, ...(email ? { email } : {}) }),
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
@@ -2234,31 +2387,31 @@ async function openPortal(customerId) {
   } catch { alert("Could not open portal. Please try again."); }
 }
 
-function PaywallModal({ item, onClose }) {
+function PaywallModal({ item, onClose, userEmail }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 400, width: "100%", position: "relative" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1 }}>✕</button>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1, border: "none" }}>✕</button>
         <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Subscribe to watch</h2>
         <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <button onClick={() => startCheckout("monthly")} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%" }}>
+          <button onClick={() => startCheckout("monthly", userEmail)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%", border: "none" }}>
             Subscribe — $2.99/mo
           </button>
-          <button onClick={() => startCheckout("annual")} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <button onClick={() => startCheckout("annual", userEmail)} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             Subscribe — $29.99/yr <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>Save 17%</span>
           </button>
         </div>
         <div style={{ marginTop: 20, textAlign: "center" }}>
-          <button onClick={onClose} style={{ background: "transparent", color: "var(--text3)", fontSize: 13, textDecoration: "underline" }}>Continue as Guest</button>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text3)", fontSize: 13, textDecoration: "underline", border: "none", cursor: "pointer" }}>Continue as Guest</button>
         </div>
       </div>
     </div>
   );
 }
 
-function SubscribePage({ navigate, onGuestActivated }) {
+function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
   const features = ["Full library access", "Live TV channels", "New content weekly", "Watch on any device"];
@@ -2317,7 +2470,7 @@ function SubscribePage({ navigate, onGuestActivated }) {
                 </li>
               ))}
             </ul>
-            <button onClick={() => startCheckout("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700 }}>
+            <button onClick={() => startCheckout("monthly", userEmail)} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
               Subscribe Now
             </button>
           </div>
@@ -2335,7 +2488,7 @@ function SubscribePage({ navigate, onGuestActivated }) {
                 </li>
               ))}
             </ul>
-            <button onClick={() => startCheckout("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700 }}>
+            <button onClick={() => startCheckout("annual", userEmail)} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
               Subscribe Now
             </button>
           </div>
@@ -2378,6 +2531,7 @@ function SubscribePage({ navigate, onGuestActivated }) {
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
+  const { user, isAuthenticated, logout } = useAuth0();
   const w = useWindowWidth();
   const [page, setPage] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
@@ -2390,7 +2544,9 @@ export default function NubianLiveViewer() {
   const [paywallItem, setPaywallItem] = useState(null);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [contentLoading, setContentLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const t = T[lang];
+  const userEmail = user?.email ?? null;
 
   useEffect(() => {
     const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "Coming Soon"];
@@ -2430,6 +2586,28 @@ export default function NubianLiveViewer() {
       .catch(() => {})
       .finally(() => setContentLoading(false));
   }, []);
+
+  // On Auth0 login: link existing localStorage subscription or redirect to subscribe
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const existing = getSubscription();
+    if (existing?.subscribed) {
+      // Already subscribed — optionally attach email
+      if (!existing.customer_email && userEmail) {
+        const updated = { ...existing, customer_email: userEmail };
+        saveSubscription(updated);
+        setSubscription(updated);
+      }
+    } else {
+      setPage("subscribe");
+    }
+  }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("nubian_subscription");
+    setSubscription(null);
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  }, [logout]);
 
   const navigate = useCallback((p) => {
     setPage(p);
@@ -2524,6 +2702,10 @@ export default function NubianLiveViewer() {
         }}
         subscription={subscription}
         onManageSubscription={handleManageSubscription}
+        user={user}
+        isAuthenticated={isAuthenticated}
+        onLogin={() => setShowLoginModal(true)}
+        onLogout={handleLogout}
       />
 
       <div style={{ minHeight: "100vh" }}>
@@ -2574,7 +2756,7 @@ export default function NubianLiveViewer() {
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
-        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} />}
+        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} userEmail={userEmail} />}
           </>
         )}
       </div>
@@ -2583,8 +2765,11 @@ export default function NubianLiveViewer() {
         <PaywallModal
           item={paywallItem}
           onClose={() => setPaywallItem(null)}
+          userEmail={userEmail}
         />
       )}
+
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
 
       {/* Footer */}
       <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: `40px ${footerPad}px`, marginTop: 60 }}>
