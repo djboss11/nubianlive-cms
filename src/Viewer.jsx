@@ -1850,7 +1850,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
-            {subscription?.guest ? (
+            {subscription?.plan === "owner" ? (
+              <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
+            ) : subscription?.guest ? (
               <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
             ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
@@ -1915,7 +1917,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block", animation: "pulse 1.5s infinite" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>3 LIVE</span>
             </div>
-            {subscription?.guest ? (
+            {subscription?.plan === "owner" ? (
+              <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
+            ) : subscription?.guest ? (
               <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
             ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
@@ -2120,7 +2124,10 @@ function ContactPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSending(true);
-    setTimeout(() => { setSending(false); setSubmitted(true); }, 1200);
+    const subject = encodeURIComponent(`[Nubian TV Contact] ${form.subject}`);
+    const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`);
+    window.location.href = `mailto:leverettmedia@gmail.com?subject=${subject}&body=${body}`;
+    setTimeout(() => { setSending(false); setSubmitted(true); }, 800);
   };
 
   const inputStyle = {
@@ -2587,12 +2594,17 @@ export default function NubianLiveViewer() {
       .finally(() => setContentLoading(false));
   }, []);
 
-  // On Auth0 login: link existing localStorage subscription or redirect to subscribe
+  // On Auth0 login: owner bypass, link subscription, or redirect to subscribe
   useEffect(() => {
     if (!isAuthenticated || !user) return;
+    if (userEmail === "leverettmedia@gmail.com") {
+      const ownerSub = { subscribed: true, plan: "owner", email: userEmail };
+      saveSubscription(ownerSub);
+      setSubscription(ownerSub);
+      return;
+    }
     const existing = getSubscription();
     if (existing?.subscribed) {
-      // Already subscribed — optionally attach email
       if (!existing.customer_email && userEmail) {
         const updated = { ...existing, customer_email: userEmail };
         saveSubscription(updated);
