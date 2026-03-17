@@ -1240,38 +1240,94 @@ function LiveTV({ t, initialChannelId }) {
 
 // ── PPV SECTION ───────────────────────────────────────────────────────────────
 
+const PPV_KEY = "nubian_ppv_purchases";
+
 function getPPVPurchases() {
-  try { return JSON.parse(localStorage.getItem("nubian_ppv_purchases") || "[]"); }
+  try { return JSON.parse(localStorage.getItem(PPV_KEY) || "[]"); }
   catch { return []; }
 }
 
-function savePPVPurchase(eventId) {
+function savePPVPurchase(eventId, type) {
+  const purchases = getPPVPurchases().filter(p => p.event_id !== eventId);
+  purchases.push({
+    event_id: eventId,
+    type,
+    expires: type === "rent" ? Date.now() + 48 * 60 * 60 * 1000 : null,
+  });
+  localStorage.setItem(PPV_KEY, JSON.stringify(purchases));
+}
+
+function isPPVOwned(eventId) {
   const purchases = getPPVPurchases();
-  if (!purchases.includes(eventId)) {
-    localStorage.setItem("nubian_ppv_purchases", JSON.stringify([...purchases, eventId]));
-  }
+  const p = purchases.find(x => x.event_id === eventId);
+  if (!p) return false;
+  if (p.type === "rent" && p.expires && Date.now() > p.expires) return false;
+  return true;
 }
 
 async function startPPVCheckout(ev, type) {
-  const title = type === "rent" ? `${ev.title} (48hr Rental)` : ev.title;
-  const price = type === "rent" ? ev.rent_price : ev.buy_price;
   try {
-    const res = await fetch(`${API_BASE}/api/stripe/create-ppv`, {
+    const res = await fetch(`${API_BASE}/api/stripe/create-ppv-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, price }),
+      body: JSON.stringify({ event_id: ev.id, type }),
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
+    else alert("Could not start checkout. Please try again.");
   } catch { alert("Could not start checkout. Please try again."); }
+}
+
+function fmtEventDate(d) {
+  if (!d) return null;
+  try {
+    return new Date(d).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  } catch { return d; }
 }
 
 function PPVSection({ t, subscription }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
   const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "1fr 1fr 1fr";
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [purchases, setPurchases] = useState(() => getPPVPurchases());
-  const [signInPrompt, setSignInPrompt] = useState(null); // ev or null
+  const [signInPrompt, setSignInPrompt] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(false);
+
+  // Load events from API
+  useEffect(() => {
+    fetch(`${API_BASE}/api/ppv`)
+      .then(r => r.json())
+      .then(data => setEvents(Array.isArray(data) ? data : []))
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Check for ppv_session_id in URL after Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("ppv_session_id");
+    const eventId = params.get("event_id");
+    const type = params.get("type");
+    if (!sessionId || !eventId) return;
+    setCheckingSession(true);
+    fetch(`${API_BASE}/api/subscription/verify?session_id=${sessionId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.payment_status === "paid") {
+          savePPVPurchase(Number(eventId), type || "buy");
+          setPurchases(getPPVPurchases());
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setCheckingSession(false);
+        // Clean URL without reload
+        const clean = window.location.pathname;
+        window.history.replaceState({}, "", clean);
+      });
+  }, []);
 
   const handlePurchase = (ev, type) => {
     if (!subscription?.subscribed) {
@@ -1281,52 +1337,89 @@ function PPVSection({ t, subscription }) {
     startPPVCheckout(ev, type);
   };
 
-  const owned = (evId) => purchases.includes(evId);
+  const owned = (evId) => isPPVOwned(evId) || purchases.some(p => {
+    if (p.event_id !== evId) return false;
+    if (p.type === "rent" && p.expires && Date.now() > p.expires) return false;
+    return true;
+  });
 
   return (
     <div style={{ padding: `24px ${sidePad}px` }}>
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 6 }}>{t.ppvTitle}</div>
       <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>{t.ppvSubtitle}</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 20 }}>
-        {ppvEvents.map(ev => (
-          <div key={ev.id} style={{ background: ev.gradient, borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
-            <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, position: "relative" }}>
-              <span>{ev.thumb}</span>
-              <div style={{ position: "absolute", top: 12, right: 12, background: "var(--accent)", color: "black", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>PAY-PER-VIEW</div>
-            </div>
-            <div style={{ padding: "18px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 4 }}>{ev.title}</div>
-              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 8 }}>{ev.subtitle}</div>
-              <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>{ev.description}</div>
-              <div style={{ display: "flex", gap: 16, marginBottom: 18, fontSize: 12, color: "var(--text2)" }}>
-                <span>📅 {ev.date}</span>
-                <span>🕐 {ev.time}</span>
-              </div>
-              {owned(ev.id) ? (
-                <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%" }}>
-                  ▶ Watch Now
-                </button>
-              ) : (
-                <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
-                  <button onClick={() => handlePurchase(ev, "buy")} style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "11px 16px", fontWeight: 800, fontSize: 14, width: "100%" }}>
-                    Buy ${ev.buy_price.toFixed(2)}
-                  </button>
-                  <button onClick={() => handlePurchase(ev, "rent")} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontWeight: 600, fontSize: 13, width: "100%" }}>
-                    Rent 48hrs ${ev.rent_price.toFixed(2)}
-                  </button>
+      {checkingSession && (
+        <div style={{ background: "var(--bg2)", border: "1px solid var(--accent)", borderRadius: 10, padding: "14px 20px", marginBottom: 20, fontSize: 13, color: "var(--accent)" }}>
+          Verifying your purchase...
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text3)", fontSize: 14, letterSpacing: 1 }}>
+          Loading events...
+        </div>
+      ) : events.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 0" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>★</div>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 2, marginBottom: 8 }}>No Events Scheduled</div>
+          <div style={{ fontSize: 13, color: "var(--text3)" }}>Check back soon for upcoming Pay-Per-View events.</div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 20 }}>
+          {events.map(ev => {
+            const isOwned = owned(ev.id);
+            const posterUrl = ev.poster_filename
+              ? (ev.poster_filename.startsWith("http") ? ev.poster_filename : `${R2}/${ev.poster_filename}`)
+              : null;
+            return (
+              <div key={ev.id} style={{ background: "linear-gradient(135deg, #0a0a14, #111120)", borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+                <div style={{ height: 200, position: "relative", background: "#0d0d1a", overflow: "hidden" }}>
+                  {posterUrl ? (
+                    <img src={posterUrl} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>★</div>
+                  )}
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "var(--accent)", color: "black", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>PAY-PER-VIEW</div>
+                  {ev.status === "live" && (
+                    <div style={{ position: "absolute", top: 12, left: 12, background: "#ff2d55", color: "white", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>● LIVE</div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                <div style={{ padding: "18px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 6 }}>{ev.title}</div>
+                  {ev.description && <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5, flex: 1 }}>{ev.description}</div>}
+                  {ev.event_date && (
+                    <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 16 }}>📅 {fmtEventDate(ev.event_date)}</div>
+                  )}
+                  {isOwned ? (
+                    <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", border: "none" }}>
+                      ▶ Watch Now
+                    </button>
+                  ) : (
+                    <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+                      {ev.buy_price != null && (
+                        <button onClick={() => handlePurchase(ev, "buy")} style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "11px 16px", fontWeight: 800, fontSize: 14, width: "100%", border: "none" }}>
+                          Buy ${Number(ev.buy_price).toFixed(2)}
+                        </button>
+                      )}
+                      {ev.rent_price != null && (
+                        <button onClick={() => handlePurchase(ev, "rent")} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontWeight: 600, fontSize: 13, width: "100%" }}>
+                          Rent 48hrs ${Number(ev.rent_price).toFixed(2)}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Sign-in prompt modal */}
       {signInPrompt && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 380, width: "100%", position: "relative" }}>
-            <button onClick={() => setSignInPrompt(null)} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1 }}>✕</button>
+            <button onClick={() => setSignInPrompt(null)} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1, border: "none" }}>✕</button>
             <div style={{ fontSize: 28, marginBottom: 12 }}>🔐</div>
             <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Sign in to purchase</div>
             <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 24 }}>
@@ -1334,7 +1427,7 @@ function PPVSection({ t, subscription }) {
             </div>
             <button
               onClick={() => { setSignInPrompt(null); startPPVCheckout(signInPrompt.ev, signInPrompt.type); }}
-              style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", marginBottom: 10 }}
+              style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", marginBottom: 10, border: "none" }}
             >
               Continue as Guest
             </button>
