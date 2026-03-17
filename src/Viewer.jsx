@@ -2232,7 +2232,7 @@ export default function NubianLiveViewer() {
   const t = T[lang];
 
   useEffect(() => {
-    const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries"];
+    const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "Coming Soon"];
     fetch(`${API_BASE}/api/content`)
       .then(r => r.json())
       .then(data => {
@@ -2262,10 +2262,8 @@ export default function NubianLiveViewer() {
           });
         });
         const liveNow = DEFAULT_CATEGORIES.find(c => c.name === "Live Now");
-        const comingSoon = DEFAULT_CATEGORIES.find(c => c.name === "Coming Soon");
         const built = GENRE_CATS.filter(g => grouped[g].length > 0).map(g => ({ name: g, items: grouped[g] }));
         if (liveNow) built.push(liveNow);
-        if (comingSoon) built.push(comingSoon);
         setCategories(built);
       })
       .catch(() => {})
