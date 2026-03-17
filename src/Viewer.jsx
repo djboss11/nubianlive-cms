@@ -263,10 +263,12 @@ const DEFAULT_CATEGORIES = [
   {
     name: "Live Now",
     items: [
-      { id: 10, title: "Eastern", thumb: "📺", type: "LIVE", viewers: "14.2K", tag: "LIVE" },
-      { id: 11, title: "Pacific", thumb: "⚽", type: "LIVE", viewers: "9.8K", tag: "LIVE" },
-      { id: 12, title: "Africa/Europe", thumb: "🎵", type: "LIVE", viewers: "2.3K", tag: "LIVE" },
-      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", viewers: "5.1K", tag: "LIVE" },
+      { id: 10, title: "Eastern",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Eastern Time — ET"  },
+      { id: 15, title: "Central",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central Time — CT"  },
+      { id: 11, title: "Pacific",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT"  },
+      { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT" },
+      { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET" },
+      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", tag: "LIVE", description: "Nubian Radio — Live Stream" },
     ],
   },
   {
