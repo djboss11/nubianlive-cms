@@ -2217,7 +2217,7 @@ function stripEpisode(title) {
   return title.replace(/\s+(S\d+\s*EP?\s*\d+|Season\s*\d+|Ep\s*\d+|Episode\s*\d+|-\s*Sneak\s*Peek|-\s*Trailer)\s*$/i, "").trim();
 }
 
-function TitleDetailPage({ item, onBack, onPlay, onSelect }) {
+function TitleDetailPage({ item, onBack, onPlay, onSelect, categories }) {
   const w = useWindowWidth();
   const isMobile = w < 768;
   const trailerRef = useRef(null);
@@ -2727,6 +2727,7 @@ export default function NubianLiveViewer() {
               item={detailItem}
               onBack={() => setDetailItem(null)}
               onPlay={handlePlay}
+              categories={categories}
               onSelect={handleContentSelect}
             />
           </div>
