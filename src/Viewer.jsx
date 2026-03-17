@@ -2318,7 +2318,7 @@ export default function NubianLiveViewer() {
           grouped[cat].push({
             id: item.id,
             title: item.title,
-            poster: item.poster_filename ? `${R2}/${item.poster_filename}` : undefined,
+            poster: item.poster_filename ? (item.poster_filename.startsWith("http") ? item.poster_filename : `${R2}/${item.poster_filename}`) : undefined,
             hlsUrl: hls(item.video_id),
             trailerUrl: item.trailer_id ? hls(item.trailer_id) : undefined,
             type: item.type || "VOD",
