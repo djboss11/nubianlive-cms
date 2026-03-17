@@ -42,7 +42,7 @@ const LANGS = {
 
 const T = {
   en: {
-    home: "Home", liveTV: "Live TV", ppv: "PPV Events", browse: "Browse",
+    home: "Home", liveTV: "Live TV", ppv: "Pay-Per-View", browse: "Browse",
     play: "Play", moreInfo: "More Info", match: "Match",
     continueWatching: "Continue Watching", watched: "watched",
     trending: "Trending Now", liveNow: "Live Now",
@@ -57,7 +57,7 @@ const T = {
     rights: "All rights reserved.",
   },
   fr: {
-    home: "Accueil", liveTV: "TV en Direct", ppv: "Événements PPV", browse: "Parcourir",
+    home: "Accueil", liveTV: "TV en Direct", ppv: "Pay-Per-View", browse: "Parcourir",
     play: "Lire", moreInfo: "Plus d'infos", match: "Correspondance",
     continueWatching: "Continuer à regarder", watched: "regardé",
     trending: "Tendances", liveNow: "En Direct",
@@ -72,7 +72,7 @@ const T = {
     rights: "Tous droits réservés.",
   },
   es: {
-    home: "Inicio", liveTV: "TV en Vivo", ppv: "Eventos PPV", browse: "Explorar",
+    home: "Inicio", liveTV: "TV en Vivo", ppv: "Pay-Per-View", browse: "Explorar",
     play: "Reproducir", moreInfo: "Más información", match: "Coincidencia",
     continueWatching: "Continuar viendo", watched: "visto",
     trending: "Tendencias", liveNow: "En Vivo",
@@ -87,7 +87,7 @@ const T = {
     rights: "Todos los derechos reservados.",
   },
   pt: {
-    home: "Início", liveTV: "TV ao Vivo", ppv: "Eventos PPV", browse: "Explorar",
+    home: "Início", liveTV: "TV ao Vivo", ppv: "Pay-Per-View", browse: "Explorar",
     play: "Reproduzir", moreInfo: "Mais informações", match: "Correspondência",
     continueWatching: "Continuar assistindo", watched: "assistido",
     trending: "Em Alta", liveNow: "Ao Vivo",
@@ -102,7 +102,7 @@ const T = {
     rights: "Todos os direitos reservados.",
   },
   sw: {
-    home: "Nyumbani", liveTV: "TV Moja kwa Moja", ppv: "Matukio ya PPV", browse: "Vinjari",
+    home: "Nyumbani", liveTV: "TV Moja kwa Moja", ppv: "Pay-Per-View", browse: "Vinjari",
     play: "Cheza", moreInfo: "Maelezo zaidi", match: "Mechi",
     continueWatching: "Endelea Kutazama", watched: "imetazamwa",
     trending: "Inayopanda", liveNow: "Moja kwa Moja",
@@ -278,9 +278,9 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const ppvEvents = [
-  { id: 1, title: "Championship Finals", subtitle: "World Cup Qualifier · Live", date: "Mar 15, 2026", time: "8:00 PM EST", price: 19.99, thumb: "🏆", gradient: "linear-gradient(135deg, #1a0500, #2a1000)" },
-  { id: 2, title: "Arena Night — Boxing", subtitle: "Heavyweight Championship", date: "Mar 22, 2026", time: "9:00 PM EST", price: 29.99, thumb: "🥊", gradient: "linear-gradient(135deg, #1a0010, #2a0020)" },
-  { id: 3, title: "Global Music Fest", subtitle: "Live from Lagos · 12 Artists", date: "Apr 5, 2026", time: "7:00 PM EST", price: 14.99, thumb: "🎤", gradient: "linear-gradient(135deg, #001a10, #002a20)" },
+  { id: 1, title: "Championship Finals", subtitle: "World Cup Qualifier · Live", description: "Watch the biggest match of the season live. Two powerhouses go head-to-head for the championship title.", date: "Mar 15, 2026", time: "8:00 PM EST", buy_price: 19.99, rent_price: 9.99, thumb: "🏆", gradient: "linear-gradient(135deg, #1a0500, #2a1000)" },
+  { id: 2, title: "Arena Night — Boxing", subtitle: "Heavyweight Championship", description: "The most anticipated heavyweight bout of the decade. Unlimited replays included with purchase.", date: "Mar 22, 2026", time: "9:00 PM EST", buy_price: 29.99, rent_price: 14.99, thumb: "🥊", gradient: "linear-gradient(135deg, #1a0010, #2a0020)" },
+  { id: 3, title: "Global Music Fest", subtitle: "Live from Lagos · 12 Artists", description: "An all-night celebration of African music featuring 12 of the continent's biggest stars.", date: "Apr 5, 2026", time: "7:00 PM EST", buy_price: 14.99, rent_price: 7.99, thumb: "🎤", gradient: "linear-gradient(135deg, #001a10, #002a20)" },
 ];
 
 const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3, 6];
@@ -1240,10 +1240,48 @@ function LiveTV({ t, initialChannelId }) {
 
 // ── PPV SECTION ───────────────────────────────────────────────────────────────
 
-function PPVSection({ t }) {
+function getPPVPurchases() {
+  try { return JSON.parse(localStorage.getItem("nubian_ppv_purchases") || "[]"); }
+  catch { return []; }
+}
+
+function savePPVPurchase(eventId) {
+  const purchases = getPPVPurchases();
+  if (!purchases.includes(eventId)) {
+    localStorage.setItem("nubian_ppv_purchases", JSON.stringify([...purchases, eventId]));
+  }
+}
+
+async function startPPVCheckout(ev, type) {
+  const title = type === "rent" ? `${ev.title} (48hr Rental)` : ev.title;
+  const price = type === "rent" ? ev.rent_price : ev.buy_price;
+  try {
+    const res = await fetch(`${API_BASE}/api/stripe/create-ppv`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, price }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  } catch { alert("Could not start checkout. Please try again."); }
+}
+
+function PPVSection({ t, subscription }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
   const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "1fr 1fr 1fr";
+  const [purchases, setPurchases] = useState(() => getPPVPurchases());
+  const [signInPrompt, setSignInPrompt] = useState(null); // ev or null
+
+  const handlePurchase = (ev, type) => {
+    if (!subscription?.subscribed) {
+      setSignInPrompt({ ev, type });
+      return;
+    }
+    startPPVCheckout(ev, type);
+  };
+
+  const owned = (evId) => purchases.includes(evId);
 
   return (
     <div style={{ padding: `24px ${sidePad}px` }}>
@@ -1252,30 +1290,60 @@ function PPVSection({ t }) {
 
       <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 20 }}>
         {ppvEvents.map(ev => (
-          <div key={ev.id} style={{ background: ev.gradient, borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)" }}>
-            <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, position: "relative" }}>
+          <div key={ev.id} style={{ background: ev.gradient, borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+            <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, position: "relative" }}>
               <span>{ev.thumb}</span>
-              <div style={{ position: "absolute", top: 12, right: 12, background: "var(--gold)", color: "black", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace" }}>PPV</div>
+              <div style={{ position: "absolute", top: 12, right: 12, background: "var(--accent)", color: "black", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>PAY-PER-VIEW</div>
             </div>
-            <div style={{ padding: "18px 20px" }}>
+            <div style={{ padding: "18px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 4 }}>{ev.title}</div>
-              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 12 }}>{ev.subtitle}</div>
-              <div style={{ display: "flex", gap: 16, marginBottom: 16, fontSize: 12, color: "var(--text2)" }}>
+              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 8 }}>{ev.subtitle}</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>{ev.description}</div>
+              <div style={{ display: "flex", gap: 16, marginBottom: 18, fontSize: 12, color: "var(--text2)" }}>
                 <span>📅 {ev.date}</span>
                 <span>🕐 {ev.time}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "var(--gold)" }}>${ev.price}</div>
-                <button style={{
-                  background: "var(--accent)", color: "white", borderRadius: 8,
-                  padding: "10px 20px", fontWeight: 700, fontSize: 14,
-                  transition: "background 0.15s",
-                }}>{t.buyNow}</button>
-              </div>
+              {owned(ev.id) ? (
+                <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%" }}>
+                  ▶ Watch Now
+                </button>
+              ) : (
+                <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+                  <button onClick={() => handlePurchase(ev, "buy")} style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "11px 16px", fontWeight: 800, fontSize: 14, width: "100%" }}>
+                    Buy ${ev.buy_price.toFixed(2)}
+                  </button>
+                  <button onClick={() => handlePurchase(ev, "rent")} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontWeight: 600, fontSize: 13, width: "100%" }}>
+                    Rent 48hrs ${ev.rent_price.toFixed(2)}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Sign-in prompt modal */}
+      {signInPrompt && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 380, width: "100%", position: "relative" }}>
+            <button onClick={() => setSignInPrompt(null)} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1 }}>✕</button>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>🔐</div>
+            <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Sign in to purchase</div>
+            <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 24 }}>
+              You need a Nubian Television account to purchase Pay-Per-View events.
+            </div>
+            <button
+              onClick={() => { setSignInPrompt(null); startPPVCheckout(signInPrompt.ev, signInPrompt.type); }}
+              style={{ background: "var(--accent)", color: "black", borderRadius: 8, padding: "12px 20px", fontWeight: 800, fontSize: 14, width: "100%", marginBottom: 10 }}
+            >
+              Continue as Guest
+            </button>
+            <button onClick={() => setSignInPrompt(null)} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 8, padding: "10px 20px", fontSize: 13, width: "100%" }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2398,7 +2466,7 @@ export default function NubianLiveViewer() {
 
         {page === "ppv" && (
           <div style={{ paddingTop: 80 }}>
-            <PPVSection t={t} />
+            <PPVSection t={t} subscription={subscription} />
           </div>
         )}
 
