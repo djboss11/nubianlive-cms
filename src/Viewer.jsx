@@ -1286,7 +1286,7 @@ function fmtEventDate(d) {
   } catch { return d; }
 }
 
-function PPVSection({ t, subscription }) {
+function PPVSection({ t, subscription, onPlayTrailer }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
   const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "1fr 1fr 1fr";
@@ -1392,6 +1392,11 @@ function PPVSection({ t, subscription }) {
                     <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "'DM Mono', monospace" }}>📅 {fmtEventDate(ev.event_date)}</div>
                   )}
                   <div style={{ display: "flex", gap: 8, flexDirection: "column", marginTop: "auto", paddingTop: 8 }}>
+                    {ev.trailer_id && onPlayTrailer && (
+                      <button onClick={() => onPlayTrailer(ev)} style={{ background: "transparent", color: "var(--text2)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 12, width: "100%", cursor: "pointer" }}>
+                        ▶ Watch Trailer
+                      </button>
+                    )}
                     {isOwned ? (
                       <button style={{ background: "var(--green)", color: "black", borderRadius: 8, padding: "10px 16px", fontWeight: 800, fontSize: 13, width: "100%", border: "none" }}>
                         ▶ Watch Now
@@ -2752,7 +2757,7 @@ export default function NubianLiveViewer() {
 
         {page === "ppv" && (
           <div style={{ paddingTop: 80 }}>
-            <PPVSection t={t} subscription={subscription} />
+            <PPVSection t={t} subscription={subscription} onPlayTrailer={(ev) => setPlaying({ title: `${ev.title} — Trailer`, hlsUrl: hls(ev.trailer_id), poster: ev.poster_filename ? (ev.poster_filename.startsWith("http") ? ev.poster_filename : `${R2}/${ev.poster_filename}`) : undefined })} />
           </div>
         )}
 
