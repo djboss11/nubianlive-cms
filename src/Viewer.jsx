@@ -1619,8 +1619,8 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
 
   if (!isAuthenticated) {
     return (
-      <button onClick={onLogin} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-        Sign In
+      <button onClick={onLogin} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none" }}>
+        Sign Up Free
       </button>
     );
   }
@@ -1660,7 +1660,7 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
 
 function LoginModal({ onClose }) {
   const { loginWithPopup } = useAuth0();
-  const [tab, setTab] = useState("signin");
+  const [tab, setTab] = useState("signup");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(null); // "google" | "email" | null
   const [error, setError] = useState("");
@@ -1698,7 +1698,8 @@ function LoginModal({ onClose }) {
       <div onClick={e => e.stopPropagation()} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 20, padding: 36, maxWidth: 400, width: "100%", position: "relative" }}>
         <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "transparent", color: "var(--text3)", fontSize: 22, lineHeight: 1, border: "none", cursor: "pointer" }}>✕</button>
 
-        <img src="/logo.png" alt="Nubian Television" style={{ height: 28, width: "auto", marginBottom: 24, display: "block" }} />
+        <img src="/logo.png" alt="Nubian Television" style={{ height: 28, width: "auto", marginBottom: 12, display: "block" }} />
+        <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 20 }}>Free account — Live TV, Radio & PPV access</div>
 
         {/* Tabs */}
         <div style={{ display: "flex", background: "var(--surface)", borderRadius: 8, padding: 3, marginBottom: 24 }}>
@@ -1909,7 +1910,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
             {isAuthenticated ? (
               <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
             ) : (
-              <button onClick={() => { onLogin(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign In</button>
+              <button onClick={() => { onLogin(); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none" }}>Sign Up Free</button>
             )}
             <LanguageSwitcher />
           </div>
@@ -2380,8 +2381,8 @@ function PaywallModal({ item, onClose, userEmail }) {
       <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 400, width: "100%", position: "relative" }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "transparent", color: "var(--text3)", fontSize: 20, lineHeight: 1, border: "none" }}>✕</button>
         <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Subscribe to watch</h2>
-        <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title}</p>
+        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Subscribe to unlock the full VOD library</h2>
+        <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title} — available with a subscription.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <button onClick={() => startCheckout("monthly", userEmail)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%", border: "none" }}>
             Subscribe — $2.99/mo
@@ -2615,6 +2616,10 @@ export default function NubianLiveViewer() {
   const VOD_TYPES = ["Series", "Movie", "Documentary"];
 
   const handleContentSelect = useCallback((item) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     if (item.type === "LIVE") {
       const ch = channels.find(c => c.name === item.title);
       setLiveChannelId(ch ? ch.id : channels[0].id);
@@ -2624,16 +2629,20 @@ export default function NubianLiveViewer() {
     } else {
       openDetail(item);
     }
-  }, [navigate, openDetail, subscription]);
+  }, [navigate, openDetail, subscription, isAuthenticated]);
 
   const handlePlay = useCallback((item) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!subscription?.subscribed && VOD_TYPES.includes(item.type)) {
       setPaywallItem(item);
     } else {
       addToWatched(item);
       setPlaying(item);
     }
-  }, [subscription]);
+  }, [subscription, isAuthenticated]);
 
   const handleManageSubscription = useCallback(() => {
     if (subscription?.customer_id) {
@@ -2728,7 +2737,16 @@ export default function NubianLiveViewer() {
 
         {page === "live" && (
           <div style={{ paddingTop: 80 }}>
-            <LiveTV t={t} initialChannelId={liveChannelId} />
+            {!isAuthenticated ? (
+              <div style={{ textAlign: "center", padding: "100px 24px" }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>📺</div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 12 }}>Sign Up Free to Watch Live TV</div>
+                <div style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Create a free account to access all 6 live channels and Nubian Radio.</div>
+                <button onClick={() => setShowLoginModal(true)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 32px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>Sign Up Free</button>
+              </div>
+            ) : (
+              <LiveTV t={t} initialChannelId={liveChannelId} />
+            )}
           </div>
         )}
 
