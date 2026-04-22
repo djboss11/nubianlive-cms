@@ -2355,6 +2355,114 @@ function TitleDetailPage({ item, onBack, onPlay, onSelect, categories }) {
   );
 }
 
+// ── AFFILIATE ─────────────────────────────────────────────────────────────────
+
+function AffiliatePage() {
+  const w = useWindowWidth();
+  const isMobile = w < 640;
+  const [form, setForm] = useState({ name: "", email: "", paypal_email: "", organization: "" });
+  const [status, setStatus] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const inputStyle = {
+    width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
+    borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontSize: 14,
+    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+  };
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus("loading");
+    setError("");
+    try {
+      const res = await fetch("https://api.nubianlive.com/api/affiliate/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          ...(form.paypal_email.trim() ? { paypal_email: form.paypal_email.trim() } : {}),
+          ...(form.organization.trim() ? { organization: form.organization.trim() } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Signup failed. Please try again."); setStatus("error"); }
+      else { setResult(data); setStatus("success"); }
+    } catch { setError("Could not connect. Please try again."); setStatus("error"); }
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(`https://nubianlive.com?ref=${result.ref_code}`).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const steps = [
+    { num: "1", title: "Sign Up", desc: "Create your free affiliate account in seconds." },
+    { num: "2", title: "Share Your Link", desc: "Share your unique referral link on social, email, or your website." },
+    { num: "3", title: "Earn $1 Per Subscriber", desc: "Get paid $1.00 for every monthly subscriber who signs up through your link." },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", paddingTop: 100, paddingBottom: 80 }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ marginBottom: 12 }}>
+            <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Affiliate Program</span>
+          </div>
+          <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>Earn Money with Nubian Television</h1>
+          <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 480, margin: "0 auto" }}>
+            Earn $1.00 for every monthly subscriber you refer. No cap, no expiry — just share and earn.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, marginBottom: 48 }}>
+          {steps.map(step => (
+            <div key={step.num} style={{ flex: 1, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, textAlign: "center" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--accent)", color: "white", fontWeight: 800, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>{step.num}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{step.title}</div>
+              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>{step.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: isMobile ? 24 : 40 }}>
+          {status === "success" && result ? (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 8 }}>Welcome to the Program!</div>
+              <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Your referral link is ready. Share it anywhere to start earning.</p>
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "14px 20px", marginBottom: 16, fontFamily: "'DM Mono', monospace", fontSize: 13, wordBreak: "break-all" }}>
+                nubianlive.com?ref={result.ref_code}
+              </div>
+              <button onClick={copyLink} style={{ background: copied ? "#22c55e" : "var(--accent)", color: copied ? "black" : "white", borderRadius: 8, padding: "12px 28px", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", width: "100%" }}>
+                {copied ? "Copied!" : "Copy Referral Link"}
+              </button>
+              <p style={{ color: "var(--text3)", fontSize: 12, marginTop: 16 }}>Your code: <strong style={{ color: "var(--text)" }}>{result.ref_code}</strong></p>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 1, marginBottom: 24 }}>Create Your Affiliate Account</div>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <input required placeholder="Full Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} />
+                <input required type="email" placeholder="Email Address" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} />
+                <input type="email" placeholder="PayPal Email (for payouts)" value={form.paypal_email} onChange={e => setForm(f => ({ ...f, paypal_email: e.target.value }))} style={inputStyle} />
+                <input placeholder="Organization (optional)" value={form.organization} onChange={e => setForm(f => ({ ...f, organization: e.target.value }))} style={inputStyle} />
+                {error && <div style={{ color: "#ff6b6b", fontSize: 13 }}>{error}</div>}
+                <button type="submit" disabled={status === "loading"} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "14px 20px", fontSize: 15, fontWeight: 700, border: "none", cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? 0.7 : 1 }}>
+                  {status === "loading" ? "Signing Up…" : "Join the Affiliate Program"}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── SUBSCRIPTION ──────────────────────────────────────────────────────────────
 
 const API_BASE = "https://api.nubianlive.com";
@@ -2669,6 +2777,15 @@ export default function NubianLiveViewer() {
     }
   }, [subscription, navigate]);
 
+  // Track referral clicks on app load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (!ref) return;
+    localStorage.setItem("nubian_ref", ref);
+    fetch(`${API_BASE}/api/affiliate/click?ref=${encodeURIComponent(ref)}`, { method: "POST" }).catch(() => {});
+  }, []);
+
   // Verify Stripe session on redirect back from checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2688,6 +2805,15 @@ export default function NubianLiveViewer() {
           };
           saveSubscription(sub);
           setSubscription(sub);
+          const ref_code = localStorage.getItem("nubian_ref");
+          if (ref_code) {
+            fetch(`${API_BASE}/api/affiliate/convert`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ref_code, subscriber_email: data.customer_email, plan: data.plan }),
+            }).catch(() => {});
+            localStorage.removeItem("nubian_ref");
+          }
         }
       })
       .catch(() => {});
@@ -2784,6 +2910,7 @@ export default function NubianLiveViewer() {
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
+        {page === "affiliate" && <AffiliatePage />}
         {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} userEmail={userEmail} />}
           </>
         )}
@@ -2825,6 +2952,7 @@ export default function NubianLiveViewer() {
               { label: t.privacy, page: "privacy" },
               { label: t.terms, page: "terms" },
               { label: t.contact, page: "contact" },
+              { label: "Become an Affiliate", page: "affiliate" },
             ].map(({ label, page: pg }) => (
               <span key={pg} onClick={() => navigate(pg)} style={{ cursor: "pointer", transition: "color 0.15s" }}
                 onMouseEnter={e => e.target.style.color = "white"}
