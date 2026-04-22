@@ -2390,7 +2390,7 @@ function PaywallModal({ item, onClose, userEmail }) {
         <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title} — available with a subscription.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <button onClick={() => startCheckout("monthly", userEmail)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%", border: "none" }}>
-            Subscribe — $2.99/mo
+            Subscribe — $3.99/mo
           </button>
           <button onClick={() => startCheckout("annual", userEmail)} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             Subscribe — $29.99/yr <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>Save 17%</span>
@@ -2454,7 +2454,7 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
           {/* Monthly */}
           <div style={{ flex: 1, maxWidth: 340, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, textAlign: "left" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
-            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$2.99</div>
+            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$3.99</div>
             <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 28 }}>per month · Cancel anytime</div>
             <ul style={{ listStyle: "none", padding: 0, marginBottom: 28, display: "flex", flexDirection: "column", gap: 10 }}>
               {features.map(f => (
