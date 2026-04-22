@@ -1286,7 +1286,7 @@ function fmtEventDate(d) {
   } catch { return d; }
 }
 
-function PPVSection({ t, subscription, onPlayTrailer }) {
+function PPVSection({ t, subscription, isOwner, onPlayTrailer }) {
   const w = useWindowWidth();
   const sidePad = w < 768 ? 16 : 48;
   const gridCols = w < 768 ? "1fr" : w < 1024 ? "1fr 1fr" : "1fr 1fr 1fr";
@@ -1333,7 +1333,7 @@ function PPVSection({ t, subscription, onPlayTrailer }) {
     startPPVCheckout(ev, type);
   };
 
-  const owned = (evId) => isPPVOwned(evId) || purchases.some(p => {
+  const owned = (evId) => isOwner || isPPVOwned(evId) || purchases.some(p => {
     if (p.event_id !== evId) return false;
     if (p.type === "rent" && p.expires && Date.now() > p.expires) return false;
     return true;
@@ -2540,6 +2540,7 @@ export default function NubianLiveViewer() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const t = T[lang];
   const userEmail = user?.email ?? null;
+  const isOwner = subscription?.plan === "owner" || userEmail === "leverettmedia@gmail.com";
 
   useEffect(() => {
     const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "Coming Soon"];
@@ -2621,7 +2622,7 @@ export default function NubianLiveViewer() {
   const VOD_TYPES = ["Series", "Movie", "Documentary"];
 
   const handleContentSelect = useCallback((item) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isOwner) {
       setShowLoginModal(true);
       return;
     }
@@ -2629,25 +2630,25 @@ export default function NubianLiveViewer() {
       const ch = channels.find(c => c.name === item.title);
       setLiveChannelId(ch ? ch.id : channels[0].id);
       navigate("live");
-    } else if (!subscription?.subscribed && VOD_TYPES.includes(item.type)) {
+    } else if (!isOwner && !subscription?.subscribed && VOD_TYPES.includes(item.type)) {
       setPaywallItem(item);
     } else {
       openDetail(item);
     }
-  }, [navigate, openDetail, subscription, isAuthenticated]);
+  }, [navigate, openDetail, subscription, isAuthenticated, isOwner]);
 
   const handlePlay = useCallback((item) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isOwner) {
       setShowLoginModal(true);
       return;
     }
-    if (!subscription?.subscribed && VOD_TYPES.includes(item.type)) {
+    if (!isOwner && !subscription?.subscribed && VOD_TYPES.includes(item.type)) {
       setPaywallItem(item);
     } else {
       addToWatched(item);
       setPlaying(item);
     }
-  }, [subscription, isAuthenticated]);
+  }, [subscription, isAuthenticated, isOwner]);
 
   const handleManageSubscription = useCallback(() => {
     if (subscription?.customer_id) {
@@ -2742,7 +2743,7 @@ export default function NubianLiveViewer() {
 
         {page === "live" && (
           <div style={{ paddingTop: 80 }}>
-            {!isAuthenticated ? (
+            {!isAuthenticated && !isOwner ? (
               <div style={{ textAlign: "center", padding: "100px 24px" }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>📺</div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 12 }}>Sign Up Free to Watch Live TV</div>
@@ -2757,7 +2758,7 @@ export default function NubianLiveViewer() {
 
         {page === "ppv" && (
           <div style={{ paddingTop: 80 }}>
-            <PPVSection t={t} subscription={subscription} onPlayTrailer={(ev) => setPlaying({ title: `${ev.title} — Trailer`, hlsUrl: hls(ev.trailer_id), poster: ev.poster_filename ? (ev.poster_filename.startsWith("http") ? ev.poster_filename : `${R2}/${ev.poster_filename}`) : undefined })} />
+            <PPVSection t={t} subscription={subscription} isOwner={isOwner} onPlayTrailer={(ev) => setPlaying({ title: `${ev.title} — Trailer`, hlsUrl: hls(ev.trailer_id), poster: ev.poster_filename ? (ev.poster_filename.startsWith("http") ? ev.poster_filename : `${R2}/${ev.poster_filename}`) : undefined })} />
           </div>
         )}
 
