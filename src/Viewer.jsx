@@ -264,12 +264,12 @@ const DEFAULT_CATEGORIES = [
   {
     name: "Live Now",
     items: [
-      { id: 10, title: "Eastern",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Eastern Time — ET"  },
-      { id: 15, title: "Central",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central Time — CT"  },
-      { id: 11, title: "Pacific",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT"  },
-      { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT" },
-      { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET" },
-      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", tag: "LIVE", description: "Nubian Radio — Live Stream" },
+      { id: 10, title: "Eastern",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Eastern Time — ET",           logo: "https://assets.nubianlive.com/East_coast_circle.png"  },
+      { id: 15, title: "Central",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central Time — CT",           logo: "https://assets.nubianlive.com/Central_US_circle.png" },
+      { id: 11, title: "Pacific",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT",           logo: "https://assets.nubianlive.com/West_coast.png"        },
+      { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT",      logo: "https://assets.nubianlive.com/west_africa.png"       },
+      { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET", logo: "https://assets.nubianlive.com/europe.png"            },
+      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", tag: "LIVE", description: "Nubian Radio — Live Stream",  logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
     ],
   },
   {
@@ -287,12 +287,12 @@ const ppvEvents = [
 const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3, 6];
 
 const channels = [
-  { id: 1, name: "Eastern",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET"  },
-  { id: 5, name: "Central",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT"  },
-  { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT"  },
-  { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT" },
-  { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET" },
-  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true },
+  { id: 1, name: "Eastern",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET",  logo: "https://assets.nubianlive.com/East_coast_circle.png"  },
+  { id: 5, name: "Central",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT",  logo: "https://assets.nubianlive.com/Central_US_circle.png" },
+  { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/West_coast.png"        },
+  { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/west_africa.png"       },
+  { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/europe.png"            },
+  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true, logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
 ];
 
 const searchResults = [
@@ -643,8 +643,8 @@ function ContentCard({ item, onClick }) {
       }}>
         {item.poster
           ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-          : item.thumb === "📺"
-            ? <img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+          : item.logo
+            ? <img src={item.logo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             : <span>{item.thumb}</span>
         }
 
@@ -896,8 +896,8 @@ function ContinueWatchingCard({ item, onSelect }) {
       }}>
         {item.poster
           ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-          : item.thumb === "📺"
-            ? <img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+          : item.logo
+            ? <img src={item.logo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             : <span>{item.thumb || "🎬"}</span>
         }
         <div style={{
@@ -1061,9 +1061,9 @@ function LiveTV({ t, initialChannelId }) {
               fontWeight: activeChannel.id === ch.id ? 700 : 400,
               display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
             }}>
-              {ch.isRadio
-                ? <span>{ch.thumb}</span>
-                : <div style={{ width: 18, height: 18, flexShrink: 0 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+              {ch.logo
+                ? <div style={{ width: 18, height: 18, flexShrink: 0 }}><img src={ch.logo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                : <span>{ch.thumb}</span>
               }
               <span>{ch.name}</span>
             </button>
@@ -1183,7 +1183,7 @@ function LiveTV({ t, initialChannelId }) {
                   />
                 ) : (
                   <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 120, height: 120 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                    <div style={{ width: 120, height: 120 }}><img src={activeChannel.logo || "https://assets.nubianlive.com/nubian-logo-light.png"} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
                   </div>
                 )}
                 {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
@@ -1232,9 +1232,9 @@ function LiveTV({ t, initialChannelId }) {
                 onMouseEnter={e => { if (activeChannel.id !== ch.id) e.currentTarget.style.background = "var(--surface2)"; }}
                 onMouseLeave={e => { if (activeChannel.id !== ch.id) e.currentTarget.style.background = "transparent"; }}
               >
-                {ch.isRadio
-                  ? <span style={{ fontSize: 24 }}>{ch.thumb}</span>
-                  : <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                {ch.logo
+                  ? <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src={ch.logo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                  : <span style={{ fontSize: 24 }}>{ch.thumb}</span>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{ch.name}</div>
