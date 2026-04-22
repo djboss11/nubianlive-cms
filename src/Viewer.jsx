@@ -2400,9 +2400,9 @@ function AffiliatePage() {
   }
 
   const steps = [
-    { num: "1", title: "Sign Up", desc: "Create your free affiliate account in seconds." },
-    { num: "2", title: "Share Your Link", desc: "Share your unique referral link on social, email, or your website." },
-    { num: "3", title: "Earn $1 Per Subscriber", desc: "Get paid $1.00 for every monthly subscriber who signs up through your link." },
+    { num: "1", title: "Sign Up Free", desc: "Create your free affiliate account in seconds and get your unique referral link." },
+    { num: "2", title: "Share Your Link", desc: "Share your link on social media, email, your website — anywhere your audience is." },
+    { num: "3", title: "Earn $1/mo Per Subscriber", desc: "Earn $1.00 every month for each active subscriber you referred — recurring for as long as they stay subscribed." },
   ];
 
   return (
@@ -2412,9 +2412,9 @@ function AffiliatePage() {
           <div style={{ marginBottom: 12 }}>
             <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Affiliate Program</span>
           </div>
-          <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>Earn Money with Nubian Television</h1>
-          <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 480, margin: "0 auto" }}>
-            Earn $1.00 for every monthly subscriber you refer. No cap, no expiry — just share and earn.
+          <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>Earn Recurring Monthly Income with Nubian Television</h1>
+          <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 520, margin: "0 auto" }}>
+            Earn $1.00 every month for every active subscriber you refer — for as long as they stay subscribed. No cap, no expiry. The longer they stay, the more you earn.
           </p>
         </div>
 
