@@ -644,7 +644,7 @@ function ContentCard({ item, onClick }) {
         {item.poster
           ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           : item.thumb === "📺"
-            ? <img src="https://assets.nubianlive.com/NU_logo_1280x1280_ROUND-01.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ? <img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             : <span>{item.thumb}</span>
         }
 
@@ -897,7 +897,7 @@ function ContinueWatchingCard({ item, onSelect }) {
         {item.poster
           ? <img src={item.poster} alt={item.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           : item.thumb === "📺"
-            ? <img src="https://assets.nubianlive.com/NU_logo_1280x1280_ROUND-01.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ? <img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             : <span>{item.thumb || "🎬"}</span>
         }
         <div style={{
@@ -1063,7 +1063,7 @@ function LiveTV({ t, initialChannelId }) {
             }}>
               {ch.isRadio
                 ? <span>{ch.thumb}</span>
-                : <div style={{ width: 18, height: 18, flexShrink: 0 }}><img src="https://assets.nubianlive.com/NU_logo_1280x1280_ROUND-01.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                : <div style={{ width: 18, height: 18, flexShrink: 0 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
               }
               <span>{ch.name}</span>
             </button>
@@ -1183,7 +1183,7 @@ function LiveTV({ t, initialChannelId }) {
                   />
                 ) : (
                   <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 120, height: 120 }}><img src="https://assets.nubianlive.com/NU_logo_1280x1280_ROUND-01.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                    <div style={{ width: 120, height: 120 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
                   </div>
                 )}
                 {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
@@ -1234,7 +1234,7 @@ function LiveTV({ t, initialChannelId }) {
               >
                 {ch.isRadio
                   ? <span style={{ fontSize: 24 }}>{ch.thumb}</span>
-                  : <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src="https://assets.nubianlive.com/NU_logo_1280x1280_ROUND-01.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
+                  : <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src="https://assets.nubianlive.com/nubian-logo-light.png" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></div>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{ch.name}</div>
