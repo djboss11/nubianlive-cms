@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Read(//d/Nubian TV/App Code/nubianlive-api/**)",
+      "Bash(wrangler deploy)",
+      "Bash(wrangler pages:*)",
+      "Bash(rm:*)"
     ]
   }
 }

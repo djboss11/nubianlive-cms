@@ -752,7 +752,10 @@ function ContentRow({ category, onSelect }) {
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 
-const HERO_HLS_URL = "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/c9c2165b624096cb9cb84b2aef2f2ccd/manifest/video.m3u8";
+const HERO_PLAYLIST = [
+  hls("c9c2165b624096cb9cb84b2aef2f2ccd"),
+  hls("14556856970a6c1e6476c3e132481ab1"),
+];
 
 function Hero({ onPlay, t }) {
   const w = useWindowWidth();
@@ -761,26 +764,38 @@ function Hero({ onPlay, t }) {
   const sidePad = w < 768 ? 16 : 48;
   const bgVideoRef = useRef(null);
   const bgHlsRef = useRef(null);
+  const playlistIdxRef = useRef(0);
   const [muted, setMuted] = useState(true);
+
+  const loadPlaylistItem = useCallback((video, idx) => {
+    const url = HERO_PLAYLIST[idx % HERO_PLAYLIST.length];
+    if (bgHlsRef.current) { bgHlsRef.current.destroy(); bgHlsRef.current = null; }
+    if (Hls.isSupported()) {
+      const h = new Hls();
+      bgHlsRef.current = h;
+      h.loadSource(url);
+      h.attachMedia(video);
+      h.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url;
+      video.play().catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const video = bgVideoRef.current;
     if (!video) return;
-    if (Hls.isSupported()) {
-      const h = new Hls();
-      bgHlsRef.current = h;
-      h.loadSource(HERO_HLS_URL);
-      h.attachMedia(video);
-      h.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {});
-      });
-      video.addEventListener("ended", () => { video.currentTime = 0; video.play().catch(() => {}); });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = HERO_HLS_URL;
-      video.play().catch(() => {});
-    }
-    return () => { bgHlsRef.current?.destroy(); };
-  }, []);
+    loadPlaylistItem(video, 0);
+    const onEnded = () => {
+      playlistIdxRef.current = (playlistIdxRef.current + 1) % HERO_PLAYLIST.length;
+      loadPlaylistItem(video, playlistIdxRef.current);
+    };
+    video.addEventListener("ended", onEnded);
+    return () => {
+      video.removeEventListener("ended", onEnded);
+      bgHlsRef.current?.destroy();
+    };
+  }, [loadPlaylistItem]);
 
   useEffect(() => {
     if (bgVideoRef.current) bgVideoRef.current.muted = muted;
