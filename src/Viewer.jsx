@@ -293,7 +293,7 @@ const channels = [
   { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/West_coast.png"        },
   { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/west_africa.png"       },
   { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/europe.png"            },
-  { id: 7, name: "OFEG",         current: "OFEG",     next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", logo: "https://assets.nubianlive.com/OFEG_Red_transp.png" },
+  { id: 7, name: "OFEG",         current: "OFEG",     next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", syncLoop: true, logo: "https://assets.nubianlive.com/OFEG_Red_transp.png" },
   { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true, logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
 ];
 
@@ -1025,21 +1025,35 @@ function LiveTV({ t, initialChannelId }) {
     if (!video || !activeChannel.hlsUrl) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
-    const onEnded = () => { video.currentTime = 0; video.play().catch(() => {}); };
+    const syncPos = (dur) => Math.floor(Date.now() / 1000) % Math.floor(dur);
+
+    const onLoadedMetadata = () => {
+      const dur = video.duration;
+      if (activeChannel.syncLoop && dur && isFinite(dur)) {
+        video.currentTime = syncPos(dur);
+      }
+      video.play().catch(() => {});
+    };
+
+    const onEnded = () => {
+      const dur = video.duration;
+      video.currentTime = (activeChannel.syncLoop && dur && isFinite(dur)) ? syncPos(dur) : 0;
+      video.play().catch(() => {});
+    };
+
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
     video.addEventListener("ended", onEnded);
 
-    let h;
     if (Hls.isSupported()) {
-      h = new Hls();
+      const h = new Hls();
       hlsRef.current = h;
       h.loadSource(activeChannel.hlsUrl);
       h.attachMedia(video);
-      h.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = activeChannel.hlsUrl;
-      video.play().catch(() => {});
     }
     return () => {
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
       video.removeEventListener("ended", onEnded);
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
     };
@@ -1212,7 +1226,7 @@ function LiveTV({ t, initialChannelId }) {
                 {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
                   <>
                     <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-                    <div style={{ position: "absolute", bottom: 48, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
                       <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
                       <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
                     </div>
