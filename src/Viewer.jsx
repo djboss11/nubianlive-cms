@@ -285,7 +285,7 @@ const ppvEvents = [
   { id: 3, title: "Global Music Fest", subtitle: "Live from Lagos · 12 Artists", description: "An all-night celebration of African music featuring 12 of the continent's biggest stars.", date: "Apr 5, 2026", time: "7:00 PM EST", buy_price: 14.99, rent_price: 7.99, thumb: "🎤", gradient: "linear-gradient(135deg, #001a10, #002a20)" },
 ];
 
-const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3, 6, 7];
+const SCHEDULED_CHANNEL_IDS = [1, 5, 2, 3, 6];
 
 const channels = [
   { id: 1, name: "Eastern",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET",  logo: "https://assets.nubianlive.com/East_coast_circle.png"  },
@@ -293,7 +293,7 @@ const channels = [
   { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/West_coast.png"        },
   { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/west_africa.png"       },
   { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/europe.png"            },
-  { id: 7, name: "OFEG",         current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"   },
+  { id: 7, name: "OFEG",         current: "OFEG",     next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", logo: "https://assets.nubianlive.com/OFEG_Red_transp.png" },
   { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true, logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
 ];
 
@@ -1025,6 +1025,9 @@ function LiveTV({ t, initialChannelId }) {
     if (!video || !activeChannel.hlsUrl) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
+    const onEnded = () => { video.currentTime = 0; video.play().catch(() => {}); };
+    video.addEventListener("ended", onEnded);
+
     let h;
     if (Hls.isSupported()) {
       h = new Hls();
@@ -1036,7 +1039,10 @@ function LiveTV({ t, initialChannelId }) {
       video.src = activeChannel.hlsUrl;
       video.play().catch(() => {});
     }
-    return () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
+    return () => {
+      video.removeEventListener("ended", onEnded);
+      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    };
   }, [activeChannel, isRadio]);
 
   // Sync mute/volume to video
