@@ -529,6 +529,17 @@ function EPGTimeline({ channel }) {
   let blocks = [];
   if (channel.isRadio) {
     blocks = [{ title: "24/7 Nubian Radio Live", x: 0, width: totalWidth, isCurrent: true }];
+  } else if (channel.syncLoop) {
+    const SLOT_MIN = 60;
+    const slotStart = Math.floor(windowStartMin / SLOT_MIN) * SLOT_MIN;
+    for (let s = slotStart; s < windowEndMin; s += SLOT_MIN) {
+      blocks.push({
+        title: "LIVE Concerts Coming Soon!",
+        x: toX(s),
+        width: SLOT_MIN * PX_PER_MIN,
+        isCurrent: localMin >= s && localMin < s + SLOT_MIN,
+      });
+    }
   } else {
     const anchorRaw = ((channel.blockOffsetSec || 0) + (channel.displayOffsetHr || 0) * 3600) / 60;
     const kStart = Math.floor((windowStartMin - anchorRaw) / BLOCK_MIN) - 1;
