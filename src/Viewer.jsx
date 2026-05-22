@@ -1865,6 +1865,7 @@ function LoginModal({ onClose }) {
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 
+// ── NAVBAR ────────────────────────────────────────────────────────────────────
 function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioClick, subscription, onManageSubscription, user, isAuthenticated, onLogin, onLogout }) {
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
