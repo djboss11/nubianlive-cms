@@ -1541,12 +1541,32 @@ function PlayerModal({ item, onClose }) {
   const videoRef = useRef(null);
   const [showUnmute, setShowUnmute] = useState(true);
   const [unmuteFading, setUnmuteFading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleUnmute = () => {
     const video = videoRef.current;
     if (video) { video.muted = false; video.volume = 1; }
     setShowUnmute(false);
   };
+
+  const handleFullscreen = () => {
+    if (!videoRef.current) return;
+    if (!document.fullscreenElement) {
+      videoRef.current.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!showUnmute) return;
@@ -1658,6 +1678,11 @@ function PlayerModal({ item, onClose }) {
                 </div>
               </div>
             </div>
+          )}
+          {item.hlsUrl && (
+            <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 60, background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+              {isFullscreen ? "⤡" : "⛶"}
+            </button>
           )}
           <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>×</button>
         </div>
