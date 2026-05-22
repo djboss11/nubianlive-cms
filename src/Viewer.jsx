@@ -1167,7 +1167,7 @@ function LiveTV({ t, initialChannelId }) {
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20 }}>
         {/* Main player area */}
         <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", flex: 1 }}>
-          <div style={{ position: "relative", background: "#000" }}>
+          <div style={{ position: "relative", background: "#000", aspectRatio: "16/9", width: "100%" }}>
             {isRadio ? (
               /* Radio UI */
               <div style={{
