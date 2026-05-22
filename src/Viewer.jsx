@@ -1290,9 +1290,6 @@ function LiveTV({ t, initialChannelId }) {
                 )}
               </>
             )}
-            <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 16, background: "red", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-              {isFullscreen ? "⤡" : "⛶"}
-            </button>
           </div>
 
           {!isRadio && (
@@ -1307,7 +1304,7 @@ function LiveTV({ t, initialChannelId }) {
                   onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
                   style={{ width: 80, accentColor: "var(--accent)" }}
                 />
-                <button style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 600 }}>📺 {t.cast}</button>
+                <button onClick={handleFullscreen} style={{ background: "var(--surface2)", color: "white", borderRadius: 6, padding: "7px 14px", fontSize: 14, border: "1px solid var(--border)", cursor: "pointer" }}>{isFullscreen ? "⤡" : "⛶"}</button>
               </div>
             </div>
           )}
