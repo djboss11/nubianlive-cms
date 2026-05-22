@@ -1869,8 +1869,21 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [liveVisible, setLiveVisible] = useState(true);
+  const liveTimerRef = useRef(null);
   const { t } = useLang();
   const isMobile = w < 768;
+
+  useEffect(() => {
+    liveTimerRef.current = setTimeout(() => setLiveVisible(false), 5000);
+    return () => clearTimeout(liveTimerRef.current);
+  }, []);
+
+  const handleLiveHover = () => {
+    setLiveVisible(true);
+    clearTimeout(liveTimerRef.current);
+    liveTimerRef.current = setTimeout(() => setLiveVisible(false), 5000);
+  };
 
   const navLinks = [
     { id: "home", label: t.home },
@@ -1937,7 +1950,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
             ) : (
               <button onClick={() => setShowSearch(true)} style={{ background: "transparent", color: "var(--text2)", fontSize: 18 }}>🔍</button>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => setPage("live")}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer", opacity: liveVisible ? 1 : 0, transition: "opacity 0.6s ease" }} onClick={() => setPage("live")} onMouseEnter={handleLiveHover}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>6 LIVE</span>
             </div>
@@ -2004,7 +2017,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
             }}>{n.label}</button>
           ))}
           <div style={{ borderTop: "1px solid var(--border)", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer" }} onClick={() => { setPage("live"); setMenuOpen(false); }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--live)22", border: "1px solid var(--live)44", borderRadius: 20, padding: "4px 10px", cursor: "pointer", opacity: liveVisible ? 1 : 0, transition: "opacity 0.6s ease" }} onClick={() => { setPage("live"); setMenuOpen(false); }} onMouseEnter={handleLiveHover}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "block" }} />
               <span style={{ fontSize: 11, color: "var(--live)", fontFamily: "'DM Mono', monospace" }}>6 LIVE</span>
             </div>
