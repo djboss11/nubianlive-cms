@@ -362,7 +362,6 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
   const [timeDisplay, setTimeDisplay] = useState("");
   const [overlayVisible, setOverlayVisible] = useState(true);
   const overlayTimerRef = useRef(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Show overlay when show changes, then fade out after 5s
   useEffect(() => {
@@ -373,29 +372,10 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
     return () => clearTimeout(overlayTimerRef.current);
   }, [nowPlaying]);
 
-  useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFsChange);
-    document.addEventListener("webkitfullscreenchange", onFsChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", onFsChange);
-      document.removeEventListener("webkitfullscreenchange", onFsChange);
-    };
-  }, []);
-
   function showOverlayBriefly() {
     setOverlayVisible(true);
     clearTimeout(overlayTimerRef.current);
     overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
-  }
-
-  function handleFullscreen() {
-    if (!videoRef.current) return;
-    if (!document.fullscreenElement) {
-      videoRef.current.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
   }
 
   function loadVideo(videoId, seekPos) {
@@ -489,13 +469,8 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
           <span style={{ background: "#ff9500", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 3, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>AD</span>
         )}
       </div>
-      <div style={{ position: "absolute", top: 16, right: 16, display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "'DM Mono', monospace", background: "rgba(0,0,0,0.55)", padding: "3px 8px", borderRadius: 4 }}>
-          {timeDisplay}
-        </div>
-        <button onClick={handleFullscreen} style={{ background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-          {isFullscreen ? "⤡" : "⛶"}
-        </button>
+      <div style={{ position: "absolute", top: 16, right: 16, fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "'DM Mono', monospace", background: "rgba(0,0,0,0.55)", padding: "3px 8px", borderRadius: 4 }}>
+        {timeDisplay}
       </div>
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0,
