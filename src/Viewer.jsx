@@ -1283,7 +1283,7 @@ function LiveTV({ t, initialChannelId }) {
                   <>
                     <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
                     {activeChannel.hlsUrl && (
-                      <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 16, background: "#000a", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+                      <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 16, background: "red", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
                         {isFullscreen ? "⤡" : "⛶"}
                       </button>
                     )}
