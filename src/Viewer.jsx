@@ -1282,11 +1282,6 @@ function LiveTV({ t, initialChannelId }) {
                 {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
                   <>
                     <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-                    {activeChannel.hlsUrl && (
-                      <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 16, background: "red", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-                        {isFullscreen ? "⤡" : "⛶"}
-                      </button>
-                    )}
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
                       <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
                       <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
@@ -1295,6 +1290,9 @@ function LiveTV({ t, initialChannelId }) {
                 )}
               </>
             )}
+            <button onClick={handleFullscreen} style={{ position: "absolute", top: 16, right: 16, background: "red", color: "white", borderRadius: "50%", width: 36, height: 36, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+              {isFullscreen ? "⤡" : "⛶"}
+            </button>
           </div>
 
           {!isRadio && (
