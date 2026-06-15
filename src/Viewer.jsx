@@ -2821,6 +2821,21 @@ export default function NubianLiveViewer() {
     setDetailItem(null);
   }, []);
 
+  useEffect(() => {
+    const slugToChannel = {
+      "ofeg": 7, "eastern": 1, "central": 5,
+      "pacific": 2, "west-africa": 3, "europe": 6, "radio": 4,
+    };
+    const match = window.location.pathname.match(/^\/live\/([^/]+)/);
+    if (match) {
+      const id = slugToChannel[match[1]];
+      if (id !== undefined) {
+        setLiveChannelId(id);
+        setPage("live");
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const openDetail = useCallback((item) => {
     setDetailItem(item);
     window.scrollTo(0, 0);
