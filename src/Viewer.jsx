@@ -352,7 +352,7 @@ function calcEasternPos(timeInShow, adBreaks) {
 
 // ── EASTERN CHANNEL COMPONENT ─────────────────────────────────────────────────
 
-function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLabel }) {
+function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLabel, onMuteRequired }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const currentVideoIdRef = useRef(null);
@@ -390,13 +390,21 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
       h.attachMedia(video);
       h.on(Hls.Events.MANIFEST_PARSED, () => {
         if (seekPos > 0) video.currentTime = seekPos;
-        video.play().catch(() => {});
+        video.play().catch(() => {
+          video.muted = true;
+          onMuteRequired?.();
+          video.play().catch(() => {});
+        });
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = url;
       video.addEventListener("loadedmetadata", () => {
         if (seekPos > 0) video.currentTime = seekPos;
-        video.play().catch(() => {});
+        video.play().catch(() => {
+          video.muted = true;
+          onMuteRequired?.();
+          video.play().catch(() => {});
+        });
       }, { once: true });
     }
   }
@@ -1063,7 +1071,11 @@ function LiveTV({ t, initialChannelId }) {
       if (activeChannel.syncLoop && dur && isFinite(dur)) {
         video.currentTime = syncPos(dur);
       }
-      video.play().catch(() => {});
+      video.play().catch(() => {
+        video.muted = true;
+        setMuted(true);
+        video.play().catch(() => {});
+      });
     };
 
     const onEnded = () => {
@@ -1242,6 +1254,7 @@ function LiveTV({ t, initialChannelId }) {
                     blockOffsetSec={activeChannel.blockOffsetSec}
                     displayOffsetHr={activeChannel.displayOffsetHr}
                     tzLabel={activeChannel.tzLabel}
+                    onMuteRequired={() => setMuted(true)}
                   />
                 ) : activeChannel.hlsUrl ? (
                   <video
