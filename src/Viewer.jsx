@@ -1743,7 +1743,7 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
   if (!isAuthenticated) {
     return (
       <button onClick={onLogin} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none" }}>
-        Sign Up Free
+        Sign Up / Login
       </button>
     );
   }
@@ -2026,7 +2026,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
             {isAuthenticated ? (
               <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
             ) : (
-              <button onClick={() => { onLogin(); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none" }}>Sign Up Free</button>
+              <button onClick={() => { onLogin(); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none" }}>Sign Up / Login</button>
             )}
             <LanguageSwitcher />
           </div>
