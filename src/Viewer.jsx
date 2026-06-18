@@ -2740,6 +2740,141 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   );
 }
 
+// ── EMBED PLAYER ──────────────────────────────────────────────────────────────
+
+function EmbedPlayer({ channel }) {
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+  const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(0.8);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isScheduled = SCHEDULED_CHANNEL_IDS.includes(channel.id);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isScheduled || channel.isRadio) return;
+    const video = videoRef.current;
+    if (!video || !channel.hlsUrl) return;
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+
+    const syncPos = (dur) => Math.floor(Date.now() / 1000) % Math.floor(dur);
+
+    const onLoadedMetadata = () => {
+      const dur = video.duration;
+      if (channel.syncLoop && dur && isFinite(dur)) video.currentTime = syncPos(dur);
+      video.play().catch(() => {
+        video.muted = true;
+        setMuted(true);
+        video.play().catch(() => {});
+      });
+    };
+
+    const onEnded = () => {
+      const dur = video.duration;
+      video.currentTime = (channel.syncLoop && dur && isFinite(dur)) ? syncPos(dur) : 0;
+      video.play().catch(() => {});
+    };
+
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("ended", onEnded);
+
+    if (Hls.isSupported()) {
+      const h = new Hls();
+      hlsRef.current = h;
+      h.loadSource(channel.hlsUrl);
+      h.attachMedia(video);
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = channel.hlsUrl;
+    }
+
+    return () => {
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("ended", onEnded);
+      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    };
+  }, [channel, isScheduled]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+      videoRef.current.volume = volume;
+    }
+  }, [muted, volume]);
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100vw", height: "100vh", background: "#000", overflow: "hidden" }}>
+      {isScheduled ? (
+        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <ScheduledChannel
+            muted={muted}
+            volume={volume}
+            blockOffsetSec={channel.blockOffsetSec}
+            displayOffsetHr={channel.displayOffsetHr}
+            tzLabel={channel.tzLabel}
+            onMuteRequired={() => setMuted(true)}
+          />
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          muted={muted}
+          playsInline
+          style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+        />
+      )}
+
+      {/* Branding logo — top left */}
+      {channel.logo && (
+        <div style={{ position: "absolute", top: 16, left: 16, pointerEvents: "none" }}>
+          <img src={channel.logo} alt={channel.name} style={{ height: 44, width: "auto", filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.7))" }} />
+        </div>
+      )}
+
+      {/* Live badge — top right */}
+      <div style={{ position: "absolute", top: 16, right: 16, pointerEvents: "none" }}>
+        <LiveBadge />
+      </div>
+
+      {/* Controls — bottom right, fade-in on hover */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "48px 16px 14px",
+        background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
+        display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end",
+      }}>
+        <button onClick={() => setMuted(m => !m)} style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)", color: "white", borderRadius: 6, padding: "6px 11px", fontSize: 14, border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}>
+          {muted ? "🔇" : "🔊"}
+        </button>
+        <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
+          onChange={e => { setVolume(Number(e.target.value)); if (muted) setMuted(false); }}
+          style={{ width: 72, accentColor: "#e50914" }}
+        />
+        <button onClick={handleFullscreen} style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)", color: "white", borderRadius: 6, padding: "6px 13px", fontSize: 14, border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}>
+          {isFullscreen ? "⤡" : "⛶"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
@@ -2943,6 +3078,16 @@ export default function NubianLiveViewer() {
 
   const isMobile = w < 768;
   const footerPad = isMobile ? 24 : 48;
+
+  const embedMatch = window.location.pathname.match(/^\/embed\/([^/]+)/);
+  if (embedMatch) {
+    const slugToChannel = {
+      "ofeg": 7, "eastern": 1, "central": 5,
+      "pacific": 2, "west-africa": 3, "europe": 6, "radio": 4,
+    };
+    const embedChannel = channels.find(c => c.id === slugToChannel[embedMatch[1]]) ?? channels[0];
+    return <EmbedPlayer channel={embedChannel} />;
+  }
 
   return (
     <LangContext.Provider value={{ lang, t, setLang }}>
