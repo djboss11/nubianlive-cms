@@ -1883,8 +1883,16 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
   const w = useWindowWidth();
   const [showSearch, setShowSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ownerDropOpen, setOwnerDropOpen] = useState(false);
+  const ownerDropRef = useRef(null);
   const { t } = useLang();
   const isMobile = w < 768;
+
+  useEffect(() => {
+    const handler = (e) => { if (ownerDropRef.current && !ownerDropRef.current.contains(e.target)) setOwnerDropOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const navLinks = [
     { id: "home", label: t.home },
@@ -1952,7 +1960,20 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <button onClick={() => setShowSearch(true)} style={{ background: "transparent", color: "var(--text2)", fontSize: 18 }}>🔍</button>
             )}
             {subscription?.plan === "owner" ? (
-              <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
+              <div ref={ownerDropRef} style={{ position: "relative" }}>
+                <button onClick={() => setOwnerDropOpen(o => !o)} style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, cursor: "pointer", border: "none" }}>OWNER</button>
+                {ownerDropOpen && (
+                  <div style={{ position: "absolute", top: 42, right: 0, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 0", minWidth: 210, zIndex: 200, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                    <div style={{ padding: "10px 18px 12px", borderBottom: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 12, color: "var(--text3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                    </div>
+                    <button onClick={() => { onLogout(); setOwnerDropOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", color: "#f87171", padding: "10px 18px", fontSize: 13, border: "none", cursor: "pointer" }}
+                      onMouseEnter={e => e.target.style.background = "var(--surface)"}
+                      onMouseLeave={e => e.target.style.background = "transparent"}
+                    >Sign Out</button>
+                  </div>
+                )}
+              </div>
             ) : subscription?.guest ? (
               <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
             ) : subscription?.subscribed ? (
