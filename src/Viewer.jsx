@@ -2896,11 +2896,99 @@ function EmbedPlayer({ channel }) {
   );
 }
 
+// ── SPLASH SCREEN ─────────────────────────────────────────────────────────────
+
+const SPLASH_SESSION_KEY = "nubian_splash_shown";
+
+function SplashScreen({ onDone }) {
+  const [fading, setFading] = useState(false);
+  const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+  const dismissedRef = useRef(false);
+
+  const dismiss = useCallback(() => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
+    setFading(true);
+    setTimeout(onDone, 600);
+  }, [onDone]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`${API_BASE}/api/settings`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const splashId = data?.splash_video_id;
+        if (!splashId) { onDone(); return; }
+
+        const video = videoRef.current;
+        if (!video) { onDone(); return; }
+
+        const splashUrl = hls(splashId);
+
+        if (Hls.isSupported()) {
+          const h = new Hls();
+          hlsRef.current = h;
+          h.loadSource(splashUrl);
+          h.attachMedia(video);
+          h.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => dismiss());
+          });
+          h.on(Hls.Events.ERROR, (_, d) => {
+            if (d.fatal) dismiss();
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = splashUrl;
+          video.play().catch(() => dismiss());
+        } else {
+          dismiss();
+        }
+      })
+      .catch(() => { if (!cancelled) onDone(); });
+
+    return () => {
+      cancelled = true;
+      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onKey = () => dismiss();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dismiss]);
+
+  return (
+    <div
+      onClick={dismiss}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "#000",
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.6s ease",
+        cursor: "pointer",
+      }}
+    >
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        onEnded={dismiss}
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      />
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
   const { user, isAuthenticated, logout } = useAuth0();
   const w = useWindowWidth();
+  const [splashDone, setSplashDone] = useState(() => !!sessionStorage.getItem(SPLASH_SESSION_KEY));
   const [page, setPage] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
@@ -3114,6 +3202,7 @@ export default function NubianLiveViewer() {
 
   return (
     <LangContext.Provider value={{ lang, t, setLang }}>
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
       <style>{css}</style>
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
