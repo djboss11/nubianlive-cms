@@ -2966,10 +2966,12 @@ function SplashScreen({ onDone }) {
       onClick={dismiss}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
+        width: "100vw", height: "100vh",
         background: "#000",
         opacity: fading ? 0 : 1,
         transition: "opacity 0.6s ease",
         cursor: "pointer",
+        overflow: "hidden",
       }}
     >
       <video
@@ -2979,6 +2981,19 @@ function SplashScreen({ onDone }) {
         onEnded={dismiss}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
       />
+      <div style={{
+        position: "absolute", bottom: "max(24px, env(safe-area-inset-bottom, 24px))",
+        left: 0, right: 0,
+        textAlign: "center",
+        color: "rgba(255,255,255,0.55)",
+        fontSize: "clamp(11px, 3vw, 14px)",
+        fontFamily: "'Inter', sans-serif",
+        letterSpacing: "0.05em",
+        pointerEvents: "none",
+        userSelect: "none",
+      }}>
+        Tap anywhere or press any key to skip
+      </div>
     </div>
   );
 }
