@@ -304,58 +304,83 @@ const searchResults = [
   { id: 4, title: "Cosmos: Remastered", thumb: "🌌", type: "Documentary", year: 2023 },
 ];
 
-// ── EASTERN CHANNEL SCHEDULE ──────────────────────────────────────────────────
+// ── SCHEDULE HELPERS ──────────────────────────────────────────────────────────
 
 const AD_SLATE_ID = "5ddd6c7f8aa7108453155d183f200727";
-const AD_SLATE_DURATION = 240;
-const EASTERN_BLOCK = 14558; // total block = sum of all slot durations (video + ad breaks)
 
-const EASTERN_SCHEDULE = [
-  { title: "Africa a-la-carte",      videoId: "92ec6bce27c3f27394e777cca7d9791e", duration: 2640, adBreaks: [695, 977, 2010, 2378],  blockStart: 0     }, // slot: 3600s
-  { title: "Charnita's World S1EP5", videoId: "e668112f6a3cbf10919271968c97c28f", duration: 2738, adBreaks: [837, 1222, 1588, 2239], blockStart: 3600  }, // slot: 3698s
-  { title: "2 Koconut Heads",        videoId: "6c13a36b28c12fcdd40760c31a0e2132", duration: 1380, adBreaks: [450, 690],               blockStart: 7298  }, // slot: 1860s
-  { title: "American Hate",          videoId: "5fe405831cdbec5bd9e2c9c83031d726", duration: 2640, adBreaks: [625, 1221, 2204, 2434],  blockStart: 9158  }, // slot: 3600s
-  { title: "Horse Talk S1EP3",       videoId: "c2f415fd160e45665513b5dec826e49a", duration: 1320, adBreaks: [437, 951],               blockStart: 12758 }, // slot: 1800s
-];
+const CHANNEL_TZ_OFFSETS = {
+  Eastern: 0, Central: -1, Pacific: -3, "West Africa": 5, Europe: 6,
+};
 
-function getETSecondsSinceMidnight() {
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function timeStrToSec(hhmm) {
+  if (!hhmm) return 0;
+  const [h, m] = hhmm.slice(0, 5).split(":").map(Number);
+  return h * 3600 + m * 60;
+}
+
+function timecodeToSec(tc) {
+  if (!tc) return 0;
+  const parts = tc.split(":").map(Number);
+  return parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts[0] * 60 + (parts[1] || 0);
+}
+
+function getChannelLocalDate(displayOffsetHr) {
   const etDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-  return etDate.getHours() * 3600 + etDate.getMinutes() * 60 + etDate.getSeconds();
+  return new Date(etDate.getTime() + displayOffsetHr * 3600 * 1000);
 }
 
-function formatET(totalSec) {
-  const h = Math.floor(totalSec / 3600) % 24;
-  const m = Math.floor((totalSec % 3600) / 60);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, "0")} ${ampm} ET`;
+function findCurrentShow(channelSchedules, dayOfWeek, localSec) {
+  const today = channelSchedules.filter(s => s.day_of_week === dayOfWeek);
+  if (!today.length) return { show: null, next: null };
+  today.sort((a, b) => timeStrToSec(a.start_time) - timeStrToSec(b.start_time));
+  for (let i = 0; i < today.length; i++) {
+    const startSec = timeStrToSec(today[i].start_time);
+    const endSec = today[i].end_time ? timeStrToSec(today[i].end_time) : startSec + 3600;
+    if (localSec >= startSec && localSec < endSec) {
+      return { show: today[i], next: today[i + 1] || today[0] || null };
+    }
+  }
+  const next = today.find(s => timeStrToSec(s.start_time) > localSec) || today[0] || null;
+  return { show: null, next };
 }
 
-// Returns { videoPos, isInAd, adSeek } given wall-clock seconds elapsed since show start
-function calcEasternPos(timeInShow, adBreaks) {
-  const breaks = [...adBreaks].sort((a, b) => a - b);
+function parseAdBreaksFromSchedule(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+// Returns { videoPos, isInAd, adSeek, adVideoId } given wall-clock seconds into the show
+function calcShowPosition(elapsedSec, adBreaks) {
+  const breaks = adBreaks
+    .filter(b => b.timecode)
+    .map(b => ({ at: timecodeToSec(b.timecode), dur: parseInt(b.duration || "30") || 30, videoId: b.mp4_file || null }))
+    .sort((a, b) => a.at - b.at);
   let wallClock = 0, videoPos = 0;
-  for (const breakAt of breaks) {
-    const toBreak = breakAt - videoPos;
-    if (wallClock + toBreak > timeInShow) {
-      return { videoPos: videoPos + (timeInShow - wallClock), isInAd: false, adSeek: 0 };
+  for (const brk of breaks) {
+    const toBreak = brk.at - videoPos;
+    if (wallClock + toBreak > elapsedSec) {
+      return { videoPos: videoPos + (elapsedSec - wallClock), isInAd: false, adSeek: 0, adVideoId: null };
     }
     wallClock += toBreak;
-    videoPos = breakAt;
-    if (wallClock + AD_SLATE_DURATION > timeInShow) {
-      return { videoPos, isInAd: true, adSeek: timeInShow - wallClock };
+    videoPos = brk.at;
+    if (wallClock + brk.dur > elapsedSec) {
+      return { videoPos, isInAd: true, adSeek: elapsedSec - wallClock, adVideoId: brk.videoId };
     }
-    wallClock += AD_SLATE_DURATION;
+    wallClock += brk.dur;
   }
-  return { videoPos: videoPos + (timeInShow - wallClock), isInAd: false, adSeek: 0 };
+  return { videoPos: videoPos + (elapsedSec - wallClock), isInAd: false, adSeek: 0, adVideoId: null };
 }
 
-// ── EASTERN CHANNEL COMPONENT ─────────────────────────────────────────────────
+// ── SCHEDULED CHANNEL COMPONENT ───────────────────────────────────────────────
 
-function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLabel, onMuteRequired }) {
+function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const currentVideoIdRef = useRef(null);
+  const loopingRef = useRef(false);
   const [nowPlaying, setNowPlaying] = useState("");
   const [upNext, setUpNext] = useState("");
   const [isAdSlate, setIsAdSlate] = useState(false);
@@ -363,7 +388,6 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
   const [overlayVisible, setOverlayVisible] = useState(true);
   const overlayTimerRef = useRef(null);
 
-  // Show overlay when show changes, then fade out after 5s
   useEffect(() => {
     if (!nowPlaying) return;
     setOverlayVisible(true);
@@ -378,72 +402,107 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
     overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
   }
 
-  function loadVideo(videoId, seekPos) {
+  function loadHls(url, seekPos, loop) {
     const video = videoRef.current;
     if (!video) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-    const url = hls(videoId);
+    loopingRef.current = !!loop;
+    const onReady = () => {
+      if (seekPos > 0) video.currentTime = seekPos;
+      video.play().catch(() => {
+        video.muted = true;
+        onMuteRequired?.();
+        video.play().catch(() => {});
+      });
+    };
     if (Hls.isSupported()) {
       const h = new Hls();
       hlsRef.current = h;
       h.loadSource(url);
       h.attachMedia(video);
-      h.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (seekPos > 0) video.currentTime = seekPos;
-        video.play().catch(() => {
-          video.muted = true;
-          onMuteRequired?.();
-          video.play().catch(() => {});
-        });
-      });
+      h.on(Hls.Events.MANIFEST_PARSED, onReady);
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = url;
-      video.addEventListener("loadedmetadata", () => {
-        if (seekPos > 0) video.currentTime = seekPos;
-        video.play().catch(() => {
-          video.muted = true;
-          onMuteRequired?.();
-          video.play().catch(() => {});
-        });
-      }, { once: true });
+      video.addEventListener("loadedmetadata", onReady, { once: true });
     }
   }
 
+  // Loop handler — restarts looped videos (fallback) from beginning on end
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnded = () => {
+      if (loopingRef.current) { video.currentTime = 0; video.play().catch(() => {}); }
+    };
+    video.addEventListener("ended", onEnded);
+    return () => video.removeEventListener("ended", onEnded);
+  }, []);
+
   useEffect(() => {
     function sync() {
-      const etSec = getETSecondsSinceMidnight();
+      const localDate = getChannelLocalDate(displayOffsetHr);
+      const dayOfWeek = DAY_NAMES[localDate.getDay()];
+      const localSec = localDate.getHours() * 3600 + localDate.getMinutes() * 60 + localDate.getSeconds();
 
-      // Apply offset: subtract blockOffsetSec to shift when block starts in ET terms
-      const posInBlock = (etSec - blockOffsetSec + EASTERN_BLOCK * 100) % EASTERN_BLOCK;
-
-      // Local display time
-      const localSec = (etSec + displayOffsetHr * 3600 + 86400 * 10) % 86400;
-      const h = Math.floor(localSec / 3600) % 24;
-      const m = Math.floor((localSec % 3600) / 60);
+      const h = localDate.getHours();
+      const m = localDate.getMinutes();
       const ampm = h >= 12 ? "PM" : "AM";
-      const h12 = h % 12 || 12;
-      setTimeDisplay(`${h12}:${String(m).padStart(2, "0")} ${ampm} ${tzLabel}`);
+      setTimeDisplay(`${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm} ${tzLabel}`);
 
-      // Find current show
-      let idx = 0;
-      for (let i = EASTERN_SCHEDULE.length - 1; i >= 0; i--) {
-        if (posInBlock >= EASTERN_SCHEDULE[i].blockStart) { idx = i; break; }
+      const channelSchedules = (schedulesByChannel || {})[channelName] || [];
+      const { show, next } = findCurrentShow(channelSchedules, dayOfWeek, localSec);
+
+      const upNextTitle = next ? (next.content_title || next.title || "—") : "—";
+
+      if (!show) {
+        setNowPlaying("Standby");
+        setUpNext(upNextTitle);
+        setIsAdSlate(false);
+        const fbId = fallbackVideoId;
+        if (fbId) {
+          const key = `loop:${fbId}`;
+          if (currentVideoIdRef.current !== key) {
+            currentVideoIdRef.current = key;
+            loadHls(hls(fbId), 0, true);
+          }
+        }
+        return;
       }
-      const show = EASTERN_SCHEDULE[idx];
-      const nextShow = EASTERN_SCHEDULE[(idx + 1) % EASTERN_SCHEDULE.length];
-      const timeInShow = posInBlock - show.blockStart;
-      const { videoPos, isInAd, adSeek } = calcEasternPos(timeInShow, show.adBreaks);
 
-      const targetId = isInAd ? AD_SLATE_ID : show.videoId;
+      const content = (contentMap || {})[String(show.content_id)];
+      const videoId = content?.video_id;
+      const title = show.content_title || show.title || "Untitled";
+
+      if (!videoId) {
+        setNowPlaying(title);
+        setUpNext(upNextTitle);
+        setIsAdSlate(false);
+        const fbId = fallbackVideoId;
+        if (fbId) {
+          const key = `loop:${fbId}`;
+          if (currentVideoIdRef.current !== key) {
+            currentVideoIdRef.current = key;
+            loadHls(hls(fbId), 0, true);
+          }
+        }
+        return;
+      }
+
+      const startSec = timeStrToSec(show.start_time);
+      const elapsedSec = Math.max(0, localSec - startSec);
+      const adBreaks = parseAdBreaksFromSchedule(show.ad_breaks);
+      const { videoPos, isInAd, adSeek, adVideoId } = calcShowPosition(elapsedSec, adBreaks);
+
+      const targetId = isInAd ? (adVideoId || AD_SLATE_ID) : videoId;
       const targetPos = isInAd ? adSeek : videoPos;
 
       setIsAdSlate(isInAd);
-      setNowPlaying(show.title);
-      setUpNext(isInAd ? show.title : nextShow.title);
+      setNowPlaying(title);
+      setUpNext(isInAd ? title : upNextTitle);
 
       if (currentVideoIdRef.current !== targetId) {
         currentVideoIdRef.current = targetId;
-        loadVideo(targetId, targetPos);
+        loadHls(hls(targetId), targetPos, false);
       } else if (videoRef.current) {
         const drift = Math.abs(videoRef.current.currentTime - targetPos);
         if (drift > 15) videoRef.current.currentTime = targetPos;
@@ -456,7 +515,7 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
       clearInterval(interval);
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
     };
-  }, [blockOffsetSec, displayOffsetHr, tzLabel]);
+  }, [channelName, displayOffsetHr, tzLabel, schedulesByChannel, contentMap, fallbackVideoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (videoRef.current) {
@@ -467,10 +526,7 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
 
   return (
     <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }} onMouseEnter={showOverlayBriefly}>
-      <video
-        ref={videoRef}
-        style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
-      />
+      <video ref={videoRef} playsInline style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }} />
       <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 8, alignItems: "center" }}>
         <LiveBadge />
         {isAdSlate && (
@@ -481,16 +537,11 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
         {timeDisplay}
       </div>
       <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        padding: "60px 24px 16px",
-        background: "linear-gradient(to top, #000c, transparent)",
-        pointerEvents: "none",
-        opacity: overlayVisible ? 1 : 0,
-        transition: "opacity 0.6s ease",
+        position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px",
+        background: "linear-gradient(to top, #000c, transparent)", pointerEvents: "none",
+        opacity: overlayVisible ? 1 : 0, transition: "opacity 0.6s ease",
       }}>
-        <div style={{ fontWeight: 700, fontSize: 16 }}>
-          {isAdSlate ? "Commercial Break" : `Now Playing: ${nowPlaying}`}
-        </div>
+        <div style={{ fontWeight: 700, fontSize: 16 }}>{isAdSlate ? "Commercial Break" : `Now Playing: ${nowPlaying}`}</div>
         <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>Up Next: {upNext}</div>
       </div>
     </div>
@@ -499,26 +550,20 @@ function ScheduledChannel({ muted, volume, blockOffsetSec, displayOffsetHr, tzLa
 
 // ── EPG TIMELINE ──────────────────────────────────────────────────────────────
 
-function EPGTimeline({ channel }) {
+function EPGTimeline({ channel, schedulesByChannel }) {
   const scrollRef = useRef(null);
   const [, setTick] = useState(0);
   const PX_PER_MIN = 4;
   const RULER_H = 26;
   const ROW_H = 56;
-  const BLOCK_MIN = EASTERN_BLOCK / 60; // 240 min
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(id);
   }, []);
 
-  function getLocalMin() {
-    const etSec = getETSecondsSinceMidnight();
-    return (etSec + (channel.displayOffsetHr || 0) * 3600 + 86400 * 10) % 86400 / 60;
-  }
-
-  function fmtMin(min) {
-    const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  function fmtMin(totalMin) {
+    const m = ((Math.round(totalMin) % 1440) + 1440) % 1440;
     const h = Math.floor(m / 60) % 24;
     const mm = m % 60;
     const ampm = h >= 12 ? "PM" : "AM";
@@ -526,13 +571,14 @@ function EPGTimeline({ channel }) {
     return `${h12}:${String(mm).padStart(2, "0")} ${ampm}`;
   }
 
-  const localMin = getLocalMin();
+  const localDate = getChannelLocalDate(channel.displayOffsetHr || 0);
+  const localMin = (localDate.getHours() * 60 + localDate.getMinutes());
   const HALF_WIN = 6 * 60;
   const windowStartMin = localMin - HALF_WIN;
   const windowEndMin = localMin + HALF_WIN;
   const totalWidth = 12 * 60 * PX_PER_MIN; // 2880px
   const toX = (m) => (m - windowStartMin) * PX_PER_MIN;
-  const nowX = toX(localMin); // always = HALF_WIN * PX_PER_MIN
+  const nowX = toX(localMin);
 
   let blocks = [];
   if (channel.isRadio) {
@@ -541,32 +587,32 @@ function EPGTimeline({ channel }) {
     const SLOT_MIN = 60;
     const slotStart = Math.floor(windowStartMin / SLOT_MIN) * SLOT_MIN;
     for (let s = slotStart; s < windowEndMin; s += SLOT_MIN) {
-      blocks.push({
-        title: "LIVE Concerts Coming Soon!",
-        x: toX(s),
-        width: SLOT_MIN * PX_PER_MIN,
-        isCurrent: localMin >= s && localMin < s + SLOT_MIN,
-      });
+      blocks.push({ title: "LIVE Concerts Coming Soon!", x: toX(s), width: SLOT_MIN * PX_PER_MIN, isCurrent: localMin >= s && localMin < s + SLOT_MIN });
     }
   } else {
-    const anchorRaw = ((channel.blockOffsetSec || 0) + (channel.displayOffsetHr || 0) * 3600) / 60;
-    const kStart = Math.floor((windowStartMin - anchorRaw) / BLOCK_MIN) - 1;
-    const kEnd = Math.ceil((windowEndMin - anchorRaw) / BLOCK_MIN) + 1;
-    for (let k = kStart; k <= kEnd; k++) {
-      const cycleStart = anchorRaw + k * BLOCK_MIN;
-      EASTERN_SCHEDULE.forEach((show, i) => {
-        const showStartMin = cycleStart + show.blockStart / 60;
-        const nextBs = i < EASTERN_SCHEDULE.length - 1 ? EASTERN_SCHEDULE[i + 1].blockStart : EASTERN_BLOCK;
-        const showEndMin = cycleStart + nextBs / 60;
-        if (showEndMin < windowStartMin || showStartMin > windowEndMin) return;
+    const channelSchedules = (schedulesByChannel || {})[channel.name] || [];
+    const todayName = DAY_NAMES[localDate.getDay()];
+    const yesterdayName = DAY_NAMES[(localDate.getDay() + 6) % 7];
+    const tomorrowName = DAY_NAMES[(localDate.getDay() + 1) % 7];
+    [
+      { name: yesterdayName, offset: -1440 },
+      { name: todayName, offset: 0 },
+      { name: tomorrowName, offset: 1440 },
+    ].forEach(({ name, offset }) => {
+      const dayShows = channelSchedules.filter(s => s.day_of_week === name);
+      dayShows.sort((a, b) => timeStrToSec(a.start_time) - timeStrToSec(b.start_time));
+      dayShows.forEach(show => {
+        const startMin = timeStrToSec(show.start_time) / 60 + offset;
+        const endMin = show.end_time ? (timeStrToSec(show.end_time) / 60 + offset) : startMin + 60;
+        if (endMin < windowStartMin || startMin > windowEndMin) return;
         blocks.push({
-          title: show.title,
-          x: toX(showStartMin),
-          width: (showEndMin - showStartMin) * PX_PER_MIN,
-          isCurrent: localMin >= showStartMin && localMin < showEndMin,
+          title: show.content_title || show.title || "Untitled",
+          x: toX(startMin),
+          width: Math.max((endMin - startMin) * PX_PER_MIN, 2),
+          isCurrent: localMin >= startMin && localMin < endMin,
         });
       });
-    }
+    });
   }
 
   const rulerTicks = [];
@@ -1010,7 +1056,7 @@ function RadioVisualizer({ muted }) {
 
 const SC_EMBED_URL = "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/djbossforever/sets/r-b-and-soul&color=%23ff0000&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false";
 
-function LiveTV({ t, initialChannelId }) {
+function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackVideoId }) {
   const w = useWindowWidth();
   const [activeChannel, setActiveChannel] = useState(
     () => (initialChannelId ? channels.find(c => c.id === initialChannelId) : null) || channels[0]
@@ -1251,9 +1297,12 @@ function LiveTV({ t, initialChannelId }) {
                     key={activeChannel.id}
                     muted={muted}
                     volume={volume}
-                    blockOffsetSec={activeChannel.blockOffsetSec}
+                    channelName={activeChannel.name}
                     displayOffsetHr={activeChannel.displayOffsetHr}
                     tzLabel={activeChannel.tzLabel}
+                    schedulesByChannel={schedulesByChannel}
+                    contentMap={contentMap}
+                    fallbackVideoId={fallbackVideoId}
                     onMuteRequired={() => setMuted(true)}
                   />
                 ) : activeChannel.hlsUrl ? (
@@ -1296,7 +1345,7 @@ function LiveTV({ t, initialChannelId }) {
               </div>
             </div>
           )}
-          <EPGTimeline channel={activeChannel} />
+          <EPGTimeline channel={activeChannel} schedulesByChannel={schedulesByChannel} />
         </div>
 
         {/* Channel list — desktop sidebar */}
@@ -2763,7 +2812,7 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
 
 // ── EMBED PLAYER ──────────────────────────────────────────────────────────────
 
-function EmbedPlayer({ channel }) {
+function EmbedPlayer({ channel, schedulesByChannel, contentMap, fallbackVideoId }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -2847,9 +2896,12 @@ function EmbedPlayer({ channel }) {
           <ScheduledChannel
             muted={muted}
             volume={volume}
-            blockOffsetSec={channel.blockOffsetSec}
+            channelName={channel.name}
             displayOffsetHr={channel.displayOffsetHr}
             tzLabel={channel.tzLabel}
+            schedulesByChannel={schedulesByChannel}
+            contentMap={contentMap}
+            fallbackVideoId={fallbackVideoId}
             onMuteRequired={() => setMuted(true)}
           />
         </div>
@@ -3016,6 +3068,9 @@ export default function NubianLiveViewer() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [contentLoading, setContentLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [schedulesByChannel, setSchedulesByChannel] = useState({});
+  const [contentMap, setContentMap] = useState({});
+  const [fallbackVideoId, setFallbackVideoId] = useState(null);
   const t = T[lang];
   const userEmail = user?.email ?? null;
   const isOwner = subscription?.plan === "owner" || userEmail === "leverettmedia@gmail.com";
@@ -3061,6 +3116,28 @@ export default function NubianLiveViewer() {
       .catch(() => {})
       .finally(() => setContentLoading(false));
   }, []);
+
+  // Fetch live schedule data for all scheduled channels + settings for fallback
+  useEffect(() => {
+    const SCHED_CHANNELS = ["Eastern", "Central", "Pacific", "West Africa", "Europe"];
+    Promise.all([
+      ...SCHED_CHANNELS.map(ch =>
+        fetch(`${API_BASE}/api/schedules?channel=${encodeURIComponent(ch)}`).then(r => r.json()).then(d => [ch, Array.isArray(d) ? d : []])
+      ),
+      fetch(`${API_BASE}/api/content`).then(r => r.json()),
+      fetch(`${API_BASE}/api/settings`).then(r => r.json()),
+    ]).then(results => {
+      const sched = {};
+      SCHED_CHANNELS.forEach((ch, i) => { sched[ch] = results[i][1]; });
+      const contentArr = results[SCHED_CHANNELS.length];
+      const settings = results[SCHED_CHANNELS.length + 1];
+      const cmap = {};
+      if (Array.isArray(contentArr)) contentArr.forEach(c => { cmap[String(c.id)] = c; });
+      setSchedulesByChannel(sched);
+      setContentMap(cmap);
+      setFallbackVideoId(settings?.fallback_video_id || null);
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On Auth0 login: owner bypass, link subscription, or redirect to subscribe
   useEffect(() => {
@@ -3212,7 +3289,7 @@ export default function NubianLiveViewer() {
       "pacific": 2, "west-africa": 3, "europe": 6, "radio": 4,
     };
     const embedChannel = channels.find(c => c.id === slugToChannel[embedMatch[1]]) ?? channels[0];
-    return <EmbedPlayer channel={embedChannel} />;
+    return <EmbedPlayer channel={embedChannel} schedulesByChannel={schedulesByChannel} contentMap={contentMap} fallbackVideoId={fallbackVideoId} />;
   }
 
   return (
@@ -3276,7 +3353,7 @@ export default function NubianLiveViewer() {
                 <button onClick={() => setShowLoginModal(true)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 32px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>Sign Up Free</button>
               </div>
             ) : (
-              <LiveTV t={t} initialChannelId={liveChannelId} />
+              <LiveTV t={t} initialChannelId={liveChannelId} schedulesByChannel={schedulesByChannel} contentMap={contentMap} fallbackVideoId={fallbackVideoId} />
             )}
           </div>
         )}
