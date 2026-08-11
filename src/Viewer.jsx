@@ -374,6 +374,31 @@ function calcShowPosition(elapsedSec, adBreaks) {
   return { videoPos: videoPos + (elapsedSec - wallClock), isInAd: false, adSeek: 0, adVideoId: null };
 }
 
+function shiftScheduleByOffset(schedule, offsetHr) {
+  if (!offsetHr) return schedule;
+  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const offsetSec = offsetHr * 3600;
+  const secToHHMM = s => `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
+  const wrapSec = (raw) => {
+    if (raw < 0) return { s: raw + 86400, d: -1 };
+    if (raw >= 86400) return { s: raw - 86400, d: 1 };
+    return { s: raw, d: 0 };
+  };
+  return schedule.map(entry => {
+    const { s: startSec, d: dayDelta } = wrapSec(timeStrToSec(entry.start_time) + offsetSec);
+    const endRaw = entry.end_time ? timeStrToSec(entry.end_time) + offsetSec : null;
+    const endSec = endRaw !== null ? wrapSec(endRaw).s : null;
+    const dayIdx = DAYS.indexOf(entry.day_of_week);
+    const newDayIdx = ((dayIdx + dayDelta) % 7 + 7) % 7;
+    return {
+      ...entry,
+      day_of_week: DAYS[newDayIdx],
+      start_time: secToHHMM(startSec),
+      end_time: endSec !== null ? secToHHMM(endSec) : null,
+    };
+  });
+}
+
 // ── SCHEDULED CHANNEL COMPONENT ───────────────────────────────────────────────
 
 function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired }) {
@@ -3117,20 +3142,26 @@ export default function NubianLiveViewer() {
       .finally(() => setContentLoading(false));
   }, []);
 
-  // Fetch live schedule data for all scheduled channels + settings for fallback
+  // Fetch Eastern as master schedule; derive timezone channels from it unless they have DB overrides
   useEffect(() => {
-    const SCHED_CHANNELS = ["Eastern", "Central", "Pacific", "West Africa", "Europe"];
+    const TZ_CHANNELS = ["Central", "Pacific", "West Africa", "Europe"];
     Promise.all([
-      ...SCHED_CHANNELS.map(ch =>
-        fetch(`${API_BASE}/api/schedules?channel=${encodeURIComponent(ch)}`).then(r => r.json()).then(d => [ch, Array.isArray(d) ? d : []])
+      fetch(`${API_BASE}/api/schedules?channel=Eastern`).then(r => r.json()).then(d => Array.isArray(d) ? d : []),
+      ...TZ_CHANNELS.map(ch =>
+        fetch(`${API_BASE}/api/schedules?channel=${encodeURIComponent(ch)}`).then(r => r.json()).then(d => Array.isArray(d) ? d : [])
       ),
       fetch(`${API_BASE}/api/content`).then(r => r.json()),
       fetch(`${API_BASE}/api/settings`).then(r => r.json()),
     ]).then(results => {
-      const sched = {};
-      SCHED_CHANNELS.forEach((ch, i) => { sched[ch] = results[i][1]; });
-      const contentArr = results[SCHED_CHANNELS.length];
-      const settings = results[SCHED_CHANNELS.length + 1];
+      const easternRaw = results[0];
+      const sched = { Eastern: easternRaw };
+      TZ_CHANNELS.forEach((ch, i) => {
+        const chEntries = results[i + 1];
+        // Use channel-specific DB entries as override; otherwise derive from Eastern with offset
+        sched[ch] = chEntries.length > 0 ? chEntries : shiftScheduleByOffset(easternRaw, CHANNEL_TZ_OFFSETS[ch]);
+      });
+      const contentArr = results[TZ_CHANNELS.length + 1];
+      const settings = results[TZ_CHANNELS.length + 2];
       const cmap = {};
       if (Array.isArray(contentArr)) contentArr.forEach(c => { cmap[String(c.id)] = c; });
       setSchedulesByChannel(sched);
