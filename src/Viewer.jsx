@@ -3164,6 +3164,12 @@ export default function NubianLiveViewer() {
       const settings = results[TZ_CHANNELS.length + 2];
       const cmap = {};
       if (Array.isArray(contentArr)) contentArr.forEach(c => { cmap[String(c.id)] = c; });
+      console.log("[schedules] built schedulesByChannel:", Object.fromEntries(
+        Object.entries(sched).map(([ch, entries]) => [ch, `${entries.length} entries`])
+      ));
+      Object.entries(sched).forEach(([ch, entries]) => {
+        console.log(`[schedules] ${ch}:`, entries.slice(0, 3));
+      });
       setSchedulesByChannel(sched);
       setContentMap(cmap);
       setFallbackVideoId(settings?.fallback_video_id || null);
