@@ -470,7 +470,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       }
 
       const content = (contentMap || {})[String(show.content_id)];
-      const videoId = content?.video_id;
+      const videoId = show.video_id || content?.video_id;
       const title = show.content_title || show.title || "Untitled";
 
       if (!videoId) {
