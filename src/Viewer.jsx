@@ -475,10 +475,12 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       // Always use ET time against Eastern master schedule so all timezone channels
       // stay in sync: a Central viewer at 6pm CT sees ET's 7pm show
       const etDate = getChannelLocalDate(0);
-      const etDayOfWeek = DAY_NAMES[etDate.getDay()];
       const etSec = etDate.getHours() * 3600 + etDate.getMinutes() * 60 + etDate.getSeconds();
+      const lookupSec = ((etSec - (displayOffsetHr * 3600)) + 86400) % 86400;
+      const lookupDate = getChannelLocalDate(-displayOffsetHr);
+      const lookupDay = DAY_NAMES[lookupDate.getDay()];
       const easternSchedule = (schedulesByChannel || {})["Eastern"] || [];
-      const { show, next } = findCurrentShow(easternSchedule, etDayOfWeek, etSec);
+      const { show, next } = findCurrentShow(easternSchedule, lookupDay, lookupSec);
 
       const upNextTitle = next ? (next.content_title || next.title || "—") : "—";
 
