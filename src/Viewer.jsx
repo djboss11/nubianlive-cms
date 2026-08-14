@@ -519,7 +519,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       }
 
       const startSec = timeStrToSec(show.start_time);
-      const elapsedSec = Math.max(0, etSec - startSec);
+      const elapsedSec = Math.max(0, lookupSec - startSec);
       const adBreaks = parseAdBreaksFromSchedule(show.ad_breaks);
       const { videoPos, isInAd, adSeek, adVideoId } = calcShowPosition(elapsedSec, adBreaks);
 
