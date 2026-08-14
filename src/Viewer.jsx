@@ -465,17 +465,20 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
 
   useEffect(() => {
     function sync() {
+      // Local time is used only for the clock display
       const localDate = getChannelLocalDate(displayOffsetHr);
-      const dayOfWeek = DAY_NAMES[localDate.getDay()];
-      const localSec = localDate.getHours() * 3600 + localDate.getMinutes() * 60 + localDate.getSeconds();
-
       const h = localDate.getHours();
       const m = localDate.getMinutes();
       const ampm = h >= 12 ? "PM" : "AM";
       setTimeDisplay(`${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm} ${tzLabel}`);
 
-      const channelSchedules = (schedulesByChannel || {})[channelName] || [];
-      const { show, next } = findCurrentShow(channelSchedules, dayOfWeek, localSec);
+      // Always use ET time against Eastern master schedule so all timezone channels
+      // stay in sync: a Central viewer at 6pm CT sees ET's 7pm show
+      const etDate = getChannelLocalDate(0);
+      const etDayOfWeek = DAY_NAMES[etDate.getDay()];
+      const etSec = etDate.getHours() * 3600 + etDate.getMinutes() * 60 + etDate.getSeconds();
+      const easternSchedule = (schedulesByChannel || {})["Eastern"] || [];
+      const { show, next } = findCurrentShow(easternSchedule, etDayOfWeek, etSec);
 
       const upNextTitle = next ? (next.content_title || next.title || "—") : "—";
 
@@ -514,7 +517,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       }
 
       const startSec = timeStrToSec(show.start_time);
-      const elapsedSec = Math.max(0, localSec - startSec);
+      const elapsedSec = Math.max(0, etSec - startSec);
       const adBreaks = parseAdBreaksFromSchedule(show.ad_breaks);
       const { videoPos, isInAd, adSeek, adVideoId } = calcShowPosition(elapsedSec, adBreaks);
 
