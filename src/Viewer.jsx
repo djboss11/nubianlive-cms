@@ -3223,6 +3223,10 @@ setSchedulesByChannel(sched);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (window.location.pathname === "/affiliate") setPage("affiliate");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const openDetail = useCallback((item) => {
     setDetailItem(item);
     window.scrollTo(0, 0);
