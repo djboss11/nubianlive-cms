@@ -273,8 +273,11 @@ const DEFAULT_CATEGORIES = [
       { id: 11, title: "Pacific",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT",           logo: "https://assets.nubianlive.com/live_west.png"     },
       { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT",      logo: "https://assets.nubianlive.com/live_africa.png"   },
       { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET", logo: "https://assets.nubianlive.com/live_europe.png"   },
-      { id: 7,  title: "OFEG",         thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT",           logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"   },
-      { id: 13, title: "Nubian Radio", thumb: "🎙️", type: "LIVE", tag: "LIVE", description: "Nubian Radio — Live Stream",  logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
+      { id: 7,  title: "OFEG",                    thumb: "📺", type: "LIVE", tag: "LIVE", description: "OFEG",                      logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"           },
+      { id: 8,  title: "The Chavis Chronicles",   thumb: "📺", type: "LIVE", tag: "LIVE", description: "The Chavis Chronicles",   logo: "https://assets.nubianlive.com/NubianLIVEicon.png"           },
+      { id: 9,  title: "Nubian News",             thumb: "📺", type: "LIVE", tag: "LIVE", description: "Nubian News",             logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png" },
+      { id: 10, title: "Washington Informer TV",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "Washington Informer TV",  logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"       },
+      { id: 13, title: "Nubian Radio",            thumb: "🎙️", type: "LIVE", tag: "LIVE", description: "Nubian Radio — Live Stream",  logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
     ],
   },
   {
@@ -297,8 +300,11 @@ const channels = [
   { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/live_west.png"    },
   { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/live_africa.png"  },
   { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/live_europe.png"  },
-  { id: 7, name: "OFEG",         current: "OFEG",     next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", syncLoop: true, logo: "https://assets.nubianlive.com/OFEG_Red_transp.png" },
-  { id: 4, name: "Nubian Radio", current: "Nubian Radio Live", next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true, logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
+  { id: 7, name: "OFEG",                    current: "OFEG",                  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"            },
+  { id: 8, name: "The Chavis Chronicles",   current: "The Chavis Chronicles",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/ef727d59951122524e0261decc68083b/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianLIVEicon.png"             },
+  { id: 9, name: "Nubian News",             current: "Nubian News",            next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/789f1e57e9771be5471781f2b9cdec82/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png"  },
+  { id: 10, name: "Washington Informer TV", current: "Coming Soon",            next: "",          status: "live", thumb: "📺", hlsUrl: "",                                                                                                              syncLoop: false, logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"        },
+  { id: 4, name: "Nubian Radio",            current: "Nubian Radio Live",      next: "Coming Up", status: "live", thumb: "🎙️", isRadio: true, logo: "https://assets.nubianlive.com/nubian-logo-light.png" },
 ];
 
 const searchResults = [
@@ -3399,7 +3405,7 @@ setSchedulesByChannel(sched);
               <div style={{ textAlign: "center", padding: "100px 24px" }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>📺</div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 12 }}>Sign Up Free to Watch Live TV</div>
-                <div style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Create a free account to access all 6 live channels and Nubian Radio.</div>
+                <div style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Create a free account to access all 9 live channels and Nubian Radio.</div>
                 <button onClick={() => setShowLoginModal(true)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 32px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>Sign Up Free</button>
               </div>
             ) : (
