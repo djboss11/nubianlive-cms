@@ -196,6 +196,10 @@ const css = `
   * { -webkit-tap-highlight-color: transparent; }
 `;
 
+// ── PLATFORM DETECTION ────────────────────────────────────────────────────────
+
+const IS_FIRE_TV = (() => { try { return localStorage.getItem('platform') === 'firetv'; } catch { return false; } })();
+
 // ── MOCK DATA ─────────────────────────────────────────────────────────────────
 
 const R2 = "https://assets.nubianlive.com"; // R2 public bucket
@@ -2057,7 +2061,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
             ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
-            ) : (
+            ) : IS_FIRE_TV ? null : (
               <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
             )}
             <LanguageSwitcher />
@@ -2120,7 +2124,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
             ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
-            ) : (
+            ) : IS_FIRE_TV ? null : (
               <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
             )}
             {isAuthenticated ? (
@@ -2707,14 +2711,20 @@ function PaywallModal({ item, onClose, userEmail }) {
         <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Subscribe to unlock the full VOD library</h2>
         <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>{item?.title} — available with a subscription.</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <button onClick={() => startCheckout("monthly", userEmail)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%", border: "none" }}>
-            Subscribe — $3.99/mo
-          </button>
-          <button onClick={() => startCheckout("annual", userEmail)} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            Subscribe — $29.99/yr <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>Save 17%</span>
-          </button>
-        </div>
+        {IS_FIRE_TV ? (
+          <p style={{ color: "var(--text2)", fontSize: 15, textAlign: "center", lineHeight: 1.7, margin: 0 }}>
+            Subscribe at <strong style={{ color: "white" }}>nubianlive.com</strong> on your mobile or computer to unlock full access.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button onClick={() => startCheckout("monthly", userEmail)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, width: "100%", border: "none" }}>
+              Subscribe — $3.99/mo
+            </button>
+            <button onClick={() => startCheckout("annual", userEmail)} style={{ background: "var(--surface)", color: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 600, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              Subscribe — $29.99/yr <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>Save 17%</span>
+            </button>
+          </div>
+        )}
         <div style={{ marginTop: 20, textAlign: "center" }}>
           <button onClick={onClose} style={{ background: "transparent", color: "var(--text3)", fontSize: 13, textDecoration: "underline", border: "none", cursor: "pointer" }}>Continue as Guest</button>
         </div>
