@@ -1352,8 +1352,10 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
                   />
                 ) : activeChannel.hlsUrl ? (
                   <video
+                    key={activeChannel.id}
                     ref={videoRef}
                     muted={muted}
+                    playsInline
                     style={{ width: "100%", aspectRatio: "16/9", display: "block", objectFit: "cover" }}
                   />
                 ) : (
