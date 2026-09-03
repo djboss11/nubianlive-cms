@@ -3149,18 +3149,6 @@ export default function NubianLiveViewer() {
   const isOwner = subscription?.plan === "owner" || userEmail === "leverettmedia@gmail.com";
   const isGuest = subscription?.plan === "guest";
 
-  // ── GA4 INIT ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-    script.async = true;
-    document.head.appendChild(script);
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function() { window.dataLayer.push(arguments); };
-    window.gtag("js", new Date());
-    window.gtag("config", GA_ID);
-  }, []);
-
   useEffect(() => {
     gtag("event", "page_view", { page_name: page });
   }, [page]);
