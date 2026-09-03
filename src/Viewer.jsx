@@ -200,6 +200,11 @@ const css = `
 
 const IS_FIRE_TV = (() => { try { return localStorage.getItem('platform') === 'firetv'; } catch { return false; } })();
 
+const GA_ID = "G-TXV03XGENS";
+function gtag(...args) {
+  if (typeof window !== "undefined" && typeof window.gtag === "function") window.gtag(...args);
+}
+
 // ── MOCK DATA ─────────────────────────────────────────────────────────────────
 
 const R2 = "https://assets.nubianlive.com"; // R2 public bucket
@@ -1448,6 +1453,11 @@ function isPPVOwned(eventId) {
 }
 
 async function startPPVCheckout(ev, type) {
+  gtag("event", "ppv_purchase", {
+    title: ev.title,
+    price: type === "rent" ? ev.rent_price : ev.buy_price,
+    type,
+  });
   try {
     const res = await fetch(`${API_BASE}/api/stripe/create-ppv-checkout`, {
       method: "POST",
@@ -1705,6 +1715,20 @@ function PlayerModal({ item, onClose }) {
 
   useEffect(() => {
     const video = videoRef.current;
+    if (!video) return;
+    const onEnded = () => {
+      gtag("event", "video_complete", {
+        title: item.title,
+        content_id: item.id,
+        watch_duration: Math.round(video.currentTime),
+      });
+    };
+    video.addEventListener("ended", onEnded);
+    return () => video.removeEventListener("ended", onEnded);
+  }, [item]);
+
+  useEffect(() => {
+    const video = videoRef.current;
     if (!video || !item.hlsUrl) return;
     setShowUnmute(true);
     setUnmuteFading(false);
@@ -1881,6 +1905,7 @@ function LoginModal({ onClose }) {
     setLoading("google"); setError("");
     try {
       await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
+      gtag("event", "login", { method: "google" });
       onClose();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Google sign-in failed. Please try again.");
@@ -1897,6 +1922,7 @@ function LoginModal({ onClose }) {
           ...(tab === "signup" ? { screen_hint: "signup" } : {}),
         },
       });
+      gtag("event", "login", { method: "email" });
       onClose();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Sign-in failed. Please try again.");
@@ -2686,6 +2712,7 @@ function saveSubscription(data) {
 }
 
 async function startCheckout(plan, email) {
+  gtag("event", "subscription_start", { plan });
   try {
     const res = await fetch(`${API_BASE}/api/stripe/create-checkout`, {
       method: "POST",
@@ -3122,6 +3149,22 @@ export default function NubianLiveViewer() {
   const isOwner = subscription?.plan === "owner" || userEmail === "leverettmedia@gmail.com";
   const isGuest = subscription?.plan === "guest";
 
+  // ── GA4 INIT ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+    script.async = true;
+    document.head.appendChild(script);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function() { window.dataLayer.push(arguments); };
+    window.gtag("js", new Date());
+    window.gtag("config", GA_ID);
+  }, []);
+
+  useEffect(() => {
+    gtag("event", "page_view", { page_name: page });
+  }, [page]);
+
   useEffect(() => {
     const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "Coming Soon"];
     fetch(`${API_BASE}/api/content`)
@@ -3256,6 +3299,7 @@ setSchedulesByChannel(sched);
       return;
     }
     if (item.type === "LIVE") {
+      gtag("event", "live_tv_view", { channel_name: item.title });
       const ch = channels.find(c => c.name === item.title);
       setLiveChannelId(ch ? ch.id : channels[0].id);
       navigate("live");
@@ -3276,8 +3320,24 @@ setSchedulesByChannel(sched);
     } else {
       addToWatched(item);
       setPlaying(item);
+      gtag("event", "video_play", {
+        title: item.title,
+        content_id: item.id,
+        platform: IS_FIRE_TV ? "firetv" : "web",
+      });
+      fetch(`${API_BASE}/api/views`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content_id: item.id,
+          title: item.title,
+          video_id: item.video_id ?? null,
+          user_email: user?.email ?? null,
+          platform: IS_FIRE_TV ? "firetv" : "web",
+        }),
+      }).catch(() => {});
     }
-  }, [subscription, isAuthenticated, isOwner, isGuest]);
+  }, [subscription, isAuthenticated, isOwner, isGuest, user]);
 
   const handleManageSubscription = useCallback(() => {
     if (subscription?.customer_id) {
