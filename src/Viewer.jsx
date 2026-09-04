@@ -1106,7 +1106,7 @@ function RadioVisualizer({ muted }) {
 
 const SC_EMBED_URL = "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/djbossforever/sets/r-b-and-soul&color=%23ff0000&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false";
 
-function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackVideoId }) {
+function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackVideoId, userEmail }) {
   const w = useWindowWidth();
   const [activeChannel, setActiveChannel] = useState(
     () => (initialChannelId ? channels.find(c => c.id === initialChannelId) : null) || channels[0]
@@ -1121,6 +1121,8 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const playerContainerRef = useRef(null);
+  const heartbeatRef = useRef(null);
+  const sessionIdRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [radioPlaying, setRadioPlaying] = useState(false);
@@ -1151,6 +1153,39 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
   useEffect(() => {
     if (!isRadio) setRadioPlaying(false);
   }, [isRadio]);
+
+  // Live viewer heartbeat
+  useEffect(() => {
+    const sessionId = (typeof crypto !== "undefined" && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`;
+    sessionIdRef.current = sessionId;
+
+    const beat = () => {
+      fetch(`${API_BASE}/api/live/heartbeat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel_name: activeChannel.name,
+          session_id: sessionId,
+          user_email: userEmail ?? "anonymous",
+          platform: IS_FIRE_TV ? "firetv" : "web",
+        }),
+      }).catch(() => {});
+    };
+
+    beat();
+    heartbeatRef.current = setInterval(beat, 30000);
+
+    return () => {
+      clearInterval(heartbeatRef.current);
+      fetch(`${API_BASE}/api/live/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      }).catch(() => {});
+    };
+  }, [activeChannel.name, userEmail]);
 
   // HLS video effect
   useEffect(() => {
@@ -3464,7 +3499,7 @@ setSchedulesByChannel(sched);
                 <button onClick={() => setShowLoginModal(true)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 32px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>Sign Up Free</button>
               </div>
             ) : (
-              <LiveTV t={t} initialChannelId={liveChannelId} schedulesByChannel={schedulesByChannel} contentMap={contentMap} fallbackVideoId={fallbackVideoId} />
+              <LiveTV t={t} initialChannelId={liveChannelId} schedulesByChannel={schedulesByChannel} contentMap={contentMap} fallbackVideoId={fallbackVideoId} userEmail={user?.email ?? null} />
             )}
           </div>
         )}
