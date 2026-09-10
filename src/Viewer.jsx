@@ -2902,170 +2902,252 @@ function PaywallModal({ item, onClose, userEmail }) {
 function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
-  const features = ["Full library access", "Live TV channels", "New content weekly", "Watch on any device"];
-  const [guestCode, setGuestCode] = useState("");
-  const [guestStatus, setGuestStatus] = useState(null); // "loading" | "success" | "error"
-  const [guestError, setGuestError] = useState("");
-  const [demographics, setDemographics] = useState({ gender: "", age_range: "", race: "", income_range: "", profession: "", heard_from: "" });
+  const { loginWithRedirect } = useAuth0();
 
-  const subInputStyle = {
-    width: "100%", background: "var(--bg2)", border: "1px solid var(--border)",
-    borderRadius: 8, padding: "10px 14px", color: "var(--text)", fontSize: 14,
+  const paidFeatures = ["Full VOD library access", "Live TV channels", "New content weekly", "Watch on any device"];
+  const freeFeatures = ["Live TV channels", "Nubian Radio", "PPV events", "No credit card required"];
+
+  const [guestCode, setGuestCode] = useState("");
+  const [guestStatus, setGuestStatus] = useState(null);
+  const [guestError, setGuestError] = useState("");
+  const [formError, setFormError] = useState("");
+
+  const [form, setForm] = useState({
+    name: "", email: "", city: "", state: "", country: "",
+    gender: "", age_range: "", race: "", income_range: "", profession: "", heard_from: "",
+  });
+
+  const inp = {
+    width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
+    borderRadius: 8, padding: "11px 14px", color: "var(--text)", fontSize: 14,
     fontFamily: "inherit", outline: "none", boxSizing: "border-box",
   };
+  const inpErr = { ...inp, border: "1px solid #f87171" };
+
+  const countries = [
+    "United States", "Canada", "United Kingdom", "Australia", "Jamaica",
+    "Trinidad and Tobago", "Barbados", "Guyana", "Belize", "Bahamas",
+    "Haiti", "Nigeria", "Ghana", "Kenya", "Ethiopia", "South Africa",
+    "Tanzania", "Uganda", "Zimbabwe", "Cameroon", "Senegal", "Ivory Coast",
+    "France", "Germany", "Netherlands", "Sweden", "Brazil", "Mexico",
+    "India", "China", "Japan", "New Zealand", "Other",
+  ];
+
+  function validate() {
+    if (!form.name.trim()) return "Full Name is required.";
+    if (!form.email.trim()) return "Email Address is required.";
+    if (!form.city.trim()) return "City is required.";
+    if (!form.state.trim()) return "State / Province is required.";
+    if (!form.country) return "Country is required.";
+    return null;
+  }
+
+  function buildPending() {
+    const p = {
+      name: form.name.trim(), email: form.email.trim(),
+      city: form.city.trim(), state: form.state.trim(), country: form.country,
+    };
+    if (form.gender) p.gender = form.gender;
+    if (form.age_range) p.age_range = form.age_range;
+    if (form.race) p.race = form.race;
+    if (form.income_range) p.income_range = form.income_range;
+    if (form.profession.trim()) p.profession = form.profession.trim();
+    if (form.heard_from) p.heard_from = form.heard_from;
+    return p;
+  }
 
   function handleSubscribe(plan) {
-    const demo = {};
-    if (demographics.gender) demo.gender = demographics.gender;
-    if (demographics.age_range) demo.age_range = demographics.age_range;
-    if (demographics.race) demo.race = demographics.race;
-    if (demographics.income_range) demo.income_range = demographics.income_range;
-    if (demographics.profession.trim()) demo.profession = demographics.profession.trim();
-    if (demographics.heard_from) demo.heard_from = demographics.heard_from;
-    if (Object.keys(demo).length > 0) {
-      localStorage.setItem("nubian_pending_demographics", JSON.stringify(demo));
-    }
-    startCheckout(plan, userEmail);
+    const err = validate();
+    if (err) { setFormError(err); return; }
+    setFormError("");
+    localStorage.setItem("nubian_pending_demographics", JSON.stringify(buildPending()));
+    startCheckout(plan, form.email.trim() || userEmail);
+  }
+
+  async function handleFreeSignup() {
+    const err = validate();
+    if (err) { setFormError(err); return; }
+    setFormError("");
+    localStorage.setItem("nubian_pending_demographics", JSON.stringify(buildPending()));
+    await loginWithRedirect({
+      authorizationParams: {
+        screen_hint: "signup",
+        login_hint: form.email.trim(),
+      },
+    });
   }
 
   async function activateGuestCode() {
     if (!guestCode.trim()) return;
-    setGuestStatus("loading");
-    setGuestError("");
+    setGuestStatus("loading"); setGuestError("");
     try {
       const res = await fetch("https://api.nubianlive.com/api/guest/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: guestCode.trim() }),
       });
       const data = await res.json();
       if (res.ok && data.valid !== false) {
         const sub = { subscribed: true, plan: "guest", guest: true };
-        saveSubscription(sub);
-        onGuestActivated(sub);
-        setGuestStatus("success");
-      } else {
-        setGuestStatus("error");
-        setGuestError(data.error || "Invalid guest code. Please try again.");
-      }
-    } catch {
-      setGuestStatus("error");
-      setGuestError("Could not connect. Please check your connection.");
-    }
+        saveSubscription(sub); onGuestActivated(sub); setGuestStatus("success");
+      } else { setGuestStatus("error"); setGuestError(data.error || "Invalid guest code."); }
+    } catch { setGuestStatus("error"); setGuestError("Could not connect. Please check your connection."); }
   }
+
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const isErr = (k) => formError && !form[k].trim() && ["name","email","city","state"].includes(k);
+  const isErrCountry = formError && !form.country;
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: 100, paddingBottom: 80 }}>
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 20px", marginBottom: 32, display: "inline-block" }}>
-          <span style={{ fontSize: 14, color: "var(--text2)" }}>Already have a free account? <strong style={{ color: "white" }}>Upgrade to unlock the full VOD library.</strong></span>
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Stream Now</span>
-        </div>
-        <h1 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>
-          Unlimited Black Entertainment
-        </h1>
-        <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 520, margin: "0 auto 48px" }}>
-          Watch original series, movies, documentaries, and live TV — all in one place.
-        </p>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
 
+        {/* Hero */}
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ marginBottom: 12 }}>
+            <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Stream Now</span>
+          </div>
+          <h1 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, lineHeight: 1.15, marginBottom: 12 }}>
+            Unlimited Black Entertainment
+          </h1>
+          <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 520, margin: "0 auto" }}>
+            Watch original series, movies, documentaries, and live TV — all in one place.
+          </p>
+        </div>
+
+        {/* Onboarding form */}
+        <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: isMobile ? 24 : 40, maxWidth: 620, margin: "0 auto 48px" }}>
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Create Your Account</div>
+          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>Fill in your details below, then choose a plan.</p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Required */}
+            <input placeholder="Full Name *" value={form.name} onChange={set("name")} style={isErr("name") ? inpErr : inp} />
+            <input type="email" placeholder="Email Address *" value={form.email} onChange={set("email")} style={isErr("email") ? inpErr : inp} />
+            <div style={{ display: "flex", gap: 12, flexDirection: isMobile ? "column" : "row" }}>
+              <input placeholder="City *" value={form.city} onChange={set("city")} style={{ ...(isErr("city") ? inpErr : inp), flex: 1 }} />
+              <input placeholder="State / Province *" value={form.state} onChange={set("state")} style={{ ...(isErr("state") ? inpErr : inp), flex: 1 }} />
+            </div>
+            <select value={form.country} onChange={set("country")} style={isErrCountry ? inpErr : inp}>
+              <option value="">Country *</option>
+              {countries.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+
+            {/* Optional divider */}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, marginTop: 4 }}>
+              <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 14 }}>
+                Optional — Help us serve you better. This information is kept private and never shared.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <select value={form.gender} onChange={set("gender")} style={inp}>
+                  <option value="">Prefer not to answer — Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Non-binary">Non-binary</option>
+                  <option value="Other">Other</option>
+                </select>
+                <select value={form.age_range} onChange={set("age_range")} style={inp}>
+                  <option value="">Prefer not to answer — Age Range</option>
+                  <option value="Under 18">Under 18</option>
+                  <option value="18-24">18-24</option>
+                  <option value="25-34">25-34</option>
+                  <option value="35-44">35-44</option>
+                  <option value="45-54">45-54</option>
+                  <option value="55-64">55-64</option>
+                  <option value="65+">65+</option>
+                </select>
+                <select value={form.race} onChange={set("race")} style={inp}>
+                  <option value="">Prefer not to answer — Race / Ethnicity</option>
+                  <option value="Black/African American">Black / African American</option>
+                  <option value="White/Caucasian">White / Caucasian</option>
+                  <option value="Hispanic/Latino">Hispanic / Latino</option>
+                  <option value="Asian/Pacific Islander">Asian / Pacific Islander</option>
+                  <option value="Native American">Native American</option>
+                  <option value="Mixed/Multiracial">Mixed / Multiracial</option>
+                  <option value="Other">Other</option>
+                </select>
+                <select value={form.income_range} onChange={set("income_range")} style={inp}>
+                  <option value="">Prefer not to answer — Income Range</option>
+                  <option value="Under $25K">Under $25K</option>
+                  <option value="$25K-$50K">$25K – $50K</option>
+                  <option value="$50K-$75K">$50K – $75K</option>
+                  <option value="$75K-$100K">$75K – $100K</option>
+                  <option value="$100K-$150K">$100K – $150K</option>
+                  <option value="$150K+">$150K+</option>
+                </select>
+                <input placeholder="Profession (optional)" value={form.profession} onChange={set("profession")} style={inp} />
+                <select value={form.heard_from} onChange={set("heard_from")} style={inp}>
+                  <option value="">Prefer not to answer — How did you hear about us?</option>
+                  <option value="Social Media">Social Media</option>
+                  <option value="Friend/Family">Friend / Family</option>
+                  <option value="Search Engine">Search Engine</option>
+                  <option value="Advertisement">Advertisement</option>
+                  <option value="News Article">News Article</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {formError && (
+            <div style={{ color: "#f87171", fontSize: 13, marginTop: 16, padding: "10px 14px", background: "rgba(248,113,113,0.1)", borderRadius: 8 }}>
+              {formError}
+            </div>
+          )}
+        </div>
+
+        {/* Plan cards */}
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, justifyContent: "center", marginBottom: 48, alignItems: isMobile ? "stretch" : "flex-start" }}>
-          {/* Monthly */}
-          <div style={{ flex: 1, maxWidth: 340, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, textAlign: "left" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
-            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$3.99</div>
-            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 28 }}>per month · Cancel anytime</div>
-            <ul style={{ listStyle: "none", padding: 0, marginBottom: 28, display: "flex", flexDirection: "column", gap: 10 }}>
-              {features.map(f => (
-                <li key={f} style={{ fontSize: 14, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+
+          {/* Free */}
+          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Free</div>
+            <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$0</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>No credit card needed</div>
+            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+              {freeFeatures.map(f => (
+                <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: "#4ade80" }}>✓</span> {f}
                 </li>
               ))}
             </ul>
-            <button onClick={() => handleSubscribe("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
+            <button onClick={handleFreeSignup} style={{ width: "100%", background: "var(--surface)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "1px solid var(--border)", cursor: "pointer" }}>
+              Create Free Account
+            </button>
+          </div>
+
+          {/* Monthly */}
+          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
+            <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$3.99</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per month · Cancel anytime</div>
+            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+              {paidFeatures.map(f => (
+                <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#4ade80" }}>✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => handleSubscribe("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
               Subscribe Now
             </button>
           </div>
 
           {/* Annual */}
-          <div style={{ flex: 1, maxWidth: 340, background: "var(--bg2)", border: "2px solid var(--accent)", borderRadius: 16, padding: 32, textAlign: "left", position: "relative" }}>
+          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "2px solid var(--accent)", borderRadius: 16, padding: 28, textAlign: "left", position: "relative" }}>
             <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#4ade80", color: "#000", fontSize: 11, fontWeight: 800, padding: "3px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>BEST VALUE — Save 17%</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Annual</div>
-            <div style={{ fontSize: 42, fontWeight: 800, marginBottom: 2 }}>$29.99</div>
-            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 28 }}>per year · just $2.50/mo</div>
-            <ul style={{ listStyle: "none", padding: 0, marginBottom: 28, display: "flex", flexDirection: "column", gap: 10 }}>
-              {features.map(f => (
-                <li key={f} style={{ fontSize: 14, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$29.99</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per year · just $2.50/mo</div>
+            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+              {paidFeatures.map(f => (
+                <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: "#4ade80" }}>✓</span> {f}
                 </li>
               ))}
             </ul>
-            <button onClick={() => handleSubscribe("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
+            <button onClick={() => handleSubscribe("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
               Subscribe Now
             </button>
-          </div>
-        </div>
-
-        {/* No account nudge */}
-        <p style={{ color: "var(--text3)", fontSize: 14, marginBottom: 32 }}>
-          Don't have an account yet?{" "}
-          <strong style={{ color: "var(--text2)" }}>Create a free account first to watch Live TV.</strong>
-        </p>
-
-        {/* Optional demographics */}
-        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 560, margin: "0 auto 32px", textAlign: "left" }}>
-          <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Help Us Serve You Better</p>
-          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 18, lineHeight: 1.5 }}>Optional — This information is kept private and never shared.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <select value={demographics.gender} onChange={e => setDemographics(d => ({ ...d, gender: e.target.value }))} style={subInputStyle}>
-              <option value="">Gender (optional)</option>
-              <option value="Prefer not to say">Prefer not to say</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Non-binary">Non-binary</option>
-              <option value="Other">Other</option>
-            </select>
-            <select value={demographics.age_range} onChange={e => setDemographics(d => ({ ...d, age_range: e.target.value }))} style={subInputStyle}>
-              <option value="">Age Range (optional)</option>
-              <option value="Under 18">Under 18</option>
-              <option value="18-24">18-24</option>
-              <option value="25-34">25-34</option>
-              <option value="35-44">35-44</option>
-              <option value="45-54">45-54</option>
-              <option value="55-64">55-64</option>
-              <option value="65+">65+</option>
-            </select>
-            <select value={demographics.race} onChange={e => setDemographics(d => ({ ...d, race: e.target.value }))} style={subInputStyle}>
-              <option value="">Race/Ethnicity (optional)</option>
-              <option value="Prefer not to say">Prefer not to say</option>
-              <option value="Black/African American">Black/African American</option>
-              <option value="White/Caucasian">White/Caucasian</option>
-              <option value="Hispanic/Latino">Hispanic/Latino</option>
-              <option value="Asian/Pacific Islander">Asian/Pacific Islander</option>
-              <option value="Native American">Native American</option>
-              <option value="Mixed/Multiracial">Mixed/Multiracial</option>
-              <option value="Other">Other</option>
-            </select>
-            <select value={demographics.income_range} onChange={e => setDemographics(d => ({ ...d, income_range: e.target.value }))} style={subInputStyle}>
-              <option value="">Income Range (optional)</option>
-              <option value="Prefer not to say">Prefer not to say</option>
-              <option value="Under $25K">Under $25K</option>
-              <option value="$25K-$50K">$25K-$50K</option>
-              <option value="$50K-$75K">$50K-$75K</option>
-              <option value="$75K-$100K">$75K-$100K</option>
-              <option value="$100K-$150K">$100K-$150K</option>
-              <option value="$150K+">$150K+</option>
-            </select>
-            <input placeholder="Profession (optional)" value={demographics.profession} onChange={e => setDemographics(d => ({ ...d, profession: e.target.value }))} style={subInputStyle} />
-            <select value={demographics.heard_from} onChange={e => setDemographics(d => ({ ...d, heard_from: e.target.value }))} style={subInputStyle}>
-              <option value="">How did you hear about us? (optional)</option>
-              <option value="Social Media">Social Media</option>
-              <option value="Friend/Family">Friend/Family</option>
-              <option value="Search Engine">Search Engine</option>
-              <option value="Advertisement">Advertisement</option>
-              <option value="News Article">News Article</option>
-              <option value="Other">Other</option>
-            </select>
           </div>
         </div>
 
@@ -3079,18 +3161,13 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
             <>
               <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
                 <input
-                  type="text"
-                  value={guestCode}
-                  onChange={e => setGuestCode(e.target.value)}
+                  type="text" value={guestCode} onChange={e => setGuestCode(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && activateGuestCode()}
                   placeholder="Enter guest code"
                   style={{ flex: 1, background: "var(--bg2)", border: "1px solid var(--border)", color: "white", borderRadius: 8, padding: "10px 14px", fontSize: 14, outline: "none" }}
                 />
-                <button
-                  onClick={activateGuestCode}
-                  disabled={guestStatus === "loading"}
-                  style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: guestStatus === "loading" ? 0.6 : 1 }}
-                >
+                <button onClick={activateGuestCode} disabled={guestStatus === "loading"}
+                  style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: guestStatus === "loading" ? 0.6 : 1 }}>
                   {guestStatus === "loading" ? "..." : "Activate"}
                 </button>
               </div>
