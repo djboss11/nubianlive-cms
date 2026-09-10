@@ -198,7 +198,12 @@ const css = `
 
 // ── PLATFORM DETECTION ────────────────────────────────────────────────────────
 
-const IS_FIRE_TV = (() => { try { return localStorage.getItem('platform') === 'firetv'; } catch { return false; } })();
+const IS_FIRE_TV = (() => {
+  try {
+    if (localStorage.getItem('platform') === 'firetv') return true;
+  } catch {}
+  return /AFT/i.test(navigator.userAgent);
+})();
 
 const GA_ID = "G-TXV03XGENS";
 function gtag(...args) {
@@ -2902,7 +2907,7 @@ function PaywallModal({ item, onClose, userEmail }) {
 function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
-  const { loginWithPopup, getIdTokenClaims } = useAuth0();
+  const { loginWithPopup, loginWithRedirect, getIdTokenClaims } = useAuth0();
 
   const paidFeatures = ["Full VOD library access", "Live TV channels", "New content weekly", "Watch on any device"];
   const freeFeatures = ["Live TV channels", "Nubian Radio", "PPV events", "No credit card required"];
@@ -2971,6 +2976,11 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
     setFormError("");
     setFreeLoading(true);
     try {
+      if (IS_FIRE_TV) {
+        localStorage.setItem("nubian_pending_free_profile", JSON.stringify(buildPending()));
+        await loginWithRedirect({ authorizationParams: { connection: "google-oauth2", screen_hint: "signup" } });
+        return;
+      }
       await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
       const claims = await getIdTokenClaims();
       const googleEmail = claims?.email ?? form.email.trim();
@@ -3117,7 +3127,7 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, justifyContent: "center", marginBottom: 48, alignItems: isMobile ? "stretch" : "flex-start" }}>
 
           {/* Free */}
-          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
+          <div style={{ flex: 1, maxWidth: IS_FIRE_TV ? 400 : 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Free</div>
             <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$0</div>
             <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>No credit card needed</div>
@@ -3132,42 +3142,51 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
               <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
               {freeLoading ? "Signing in…" : "Continue with Google"}
             </button>
+            {IS_FIRE_TV && (
+              <p style={{ fontSize: 13, color: "var(--text3)", marginTop: 16, lineHeight: 1.6, textAlign: "center" }}>
+                For full access, visit <strong style={{ color: "white" }}>nubianlive.com</strong> on your phone or computer to subscribe.
+              </p>
+            )}
           </div>
 
-          {/* Monthly */}
-          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
-            <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$3.99</div>
-            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per month · Cancel anytime</div>
-            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
-              {paidFeatures.map(f => (
-                <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#4ade80" }}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => handleSubscribe("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
-              Subscribe Now
-            </button>
-          </div>
+          {/* Monthly — hidden on Fire TV */}
+          {!IS_FIRE_TV && (
+            <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "left" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Monthly</div>
+              <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$3.99</div>
+              <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per month · Cancel anytime</div>
+              <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+                {paidFeatures.map(f => (
+                  <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#4ade80" }}>✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => handleSubscribe("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                Subscribe Now
+              </button>
+            </div>
+          )}
 
-          {/* Annual */}
-          <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "2px solid var(--accent)", borderRadius: 16, padding: 28, textAlign: "left", position: "relative" }}>
-            <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#4ade80", color: "#000", fontSize: 11, fontWeight: 800, padding: "3px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>BEST VALUE — Save 17%</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Annual</div>
-            <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$29.99</div>
-            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per year · just $2.50/mo</div>
-            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
-              {paidFeatures.map(f => (
-                <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#4ade80" }}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => handleSubscribe("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
-              Subscribe Now
-            </button>
-          </div>
+          {/* Annual — hidden on Fire TV */}
+          {!IS_FIRE_TV && (
+            <div style={{ flex: 1, maxWidth: 280, background: "var(--bg2)", border: "2px solid var(--accent)", borderRadius: 16, padding: 28, textAlign: "left", position: "relative" }}>
+              <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#4ade80", color: "#000", fontSize: 11, fontWeight: 800, padding: "3px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>BEST VALUE — Save 17%</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Annual</div>
+              <div style={{ fontSize: 36, fontWeight: 800, marginBottom: 2 }}>$29.99</div>
+              <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>per year · just $2.50/mo</div>
+              <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+                {paidFeatures.map(f => (
+                  <li key={f} style={{ fontSize: 13, color: "var(--text2)", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#4ade80" }}>✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => handleSubscribe("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                Subscribe Now
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Guest code */}
