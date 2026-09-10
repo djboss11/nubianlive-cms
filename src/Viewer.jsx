@@ -2638,7 +2638,7 @@ function TitleDetailPage({ item, onBack, onPlay, onSelect, categories }) {
 function AffiliatePage() {
   const w = useWindowWidth();
   const isMobile = w < 640;
-  const [form, setForm] = useState({ name: "", email: "", paypal_email: "", organization: "" });
+  const [form, setForm] = useState({ name: "", email: "", paypal_email: "", organization: "", gender: "", age_range: "", race: "", income_range: "", profession: "", heard_from: "" });
   const [status, setStatus] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -2663,6 +2663,12 @@ function AffiliatePage() {
           email: form.email.trim(),
           ...(form.paypal_email.trim() ? { paypal_email: form.paypal_email.trim() } : {}),
           ...(form.organization.trim() ? { organization: form.organization.trim() } : {}),
+          ...(form.gender ? { gender: form.gender } : {}),
+          ...(form.age_range ? { age_range: form.age_range } : {}),
+          ...(form.race ? { race: form.race } : {}),
+          ...(form.income_range ? { income_range: form.income_range } : {}),
+          ...(form.profession.trim() ? { profession: form.profession.trim() } : {}),
+          ...(form.heard_from ? { heard_from: form.heard_from } : {}),
         }),
       });
       const data = await res.json();
@@ -2728,6 +2734,64 @@ function AffiliatePage() {
                 <input required type="email" placeholder="Email Address" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} />
                 <input type="email" placeholder="PayPal Email (for payouts)" value={form.paypal_email} onChange={e => setForm(f => ({ ...f, paypal_email: e.target.value }))} style={inputStyle} />
                 <input placeholder="Organization (optional)" value={form.organization} onChange={e => setForm(f => ({ ...f, organization: e.target.value }))} style={inputStyle} />
+
+                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                  <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 14, lineHeight: 1.5 }}>
+                    Optional — Help us serve you better. This information is kept private and never shared.
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <select value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))} style={inputStyle}>
+                      <option value="">Gender (optional)</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <select value={form.age_range} onChange={e => setForm(f => ({ ...f, age_range: e.target.value }))} style={inputStyle}>
+                      <option value="">Age Range (optional)</option>
+                      <option value="Under 18">Under 18</option>
+                      <option value="18-24">18-24</option>
+                      <option value="25-34">25-34</option>
+                      <option value="35-44">35-44</option>
+                      <option value="45-54">45-54</option>
+                      <option value="55-64">55-64</option>
+                      <option value="65+">65+</option>
+                    </select>
+                    <select value={form.race} onChange={e => setForm(f => ({ ...f, race: e.target.value }))} style={inputStyle}>
+                      <option value="">Race/Ethnicity (optional)</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="Black/African American">Black/African American</option>
+                      <option value="White/Caucasian">White/Caucasian</option>
+                      <option value="Hispanic/Latino">Hispanic/Latino</option>
+                      <option value="Asian/Pacific Islander">Asian/Pacific Islander</option>
+                      <option value="Native American">Native American</option>
+                      <option value="Mixed/Multiracial">Mixed/Multiracial</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <select value={form.income_range} onChange={e => setForm(f => ({ ...f, income_range: e.target.value }))} style={inputStyle}>
+                      <option value="">Income Range (optional)</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="Under $25K">Under $25K</option>
+                      <option value="$25K-$50K">$25K-$50K</option>
+                      <option value="$50K-$75K">$50K-$75K</option>
+                      <option value="$75K-$100K">$75K-$100K</option>
+                      <option value="$100K-$150K">$100K-$150K</option>
+                      <option value="$150K+">$150K+</option>
+                    </select>
+                    <input placeholder="Profession (optional)" value={form.profession} onChange={e => setForm(f => ({ ...f, profession: e.target.value }))} style={inputStyle} />
+                    <select value={form.heard_from} onChange={e => setForm(f => ({ ...f, heard_from: e.target.value }))} style={inputStyle}>
+                      <option value="">How did you hear about us? (optional)</option>
+                      <option value="Social Media">Social Media</option>
+                      <option value="Friend/Family">Friend/Family</option>
+                      <option value="Search Engine">Search Engine</option>
+                      <option value="Advertisement">Advertisement</option>
+                      <option value="News Article">News Article</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
                 {error && <div style={{ color: "#ff6b6b", fontSize: 13 }}>{error}</div>}
                 <button type="submit" disabled={status === "loading"} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "14px 20px", fontSize: 15, fontWeight: 700, border: "none", cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? 0.7 : 1 }}>
                   {status === "loading" ? "Signing Up…" : "Join the Affiliate Program"}
@@ -2815,6 +2879,27 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   const [guestCode, setGuestCode] = useState("");
   const [guestStatus, setGuestStatus] = useState(null); // "loading" | "success" | "error"
   const [guestError, setGuestError] = useState("");
+  const [demographics, setDemographics] = useState({ gender: "", age_range: "", race: "", income_range: "", profession: "", heard_from: "" });
+
+  const subInputStyle = {
+    width: "100%", background: "var(--bg2)", border: "1px solid var(--border)",
+    borderRadius: 8, padding: "10px 14px", color: "var(--text)", fontSize: 14,
+    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+  };
+
+  function handleSubscribe(plan) {
+    const demo = {};
+    if (demographics.gender) demo.gender = demographics.gender;
+    if (demographics.age_range) demo.age_range = demographics.age_range;
+    if (demographics.race) demo.race = demographics.race;
+    if (demographics.income_range) demo.income_range = demographics.income_range;
+    if (demographics.profession.trim()) demo.profession = demographics.profession.trim();
+    if (demographics.heard_from) demo.heard_from = demographics.heard_from;
+    if (Object.keys(demo).length > 0) {
+      localStorage.setItem("nubian_pending_demographics", JSON.stringify(demo));
+    }
+    startCheckout(plan, userEmail);
+  }
 
   async function activateGuestCode() {
     if (!guestCode.trim()) return;
@@ -2867,7 +2952,7 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
                 </li>
               ))}
             </ul>
-            <button onClick={() => startCheckout("monthly", userEmail)} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
+            <button onClick={() => handleSubscribe("monthly")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
               Subscribe Now
             </button>
           </div>
@@ -2885,9 +2970,66 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
                 </li>
               ))}
             </ul>
-            <button onClick={() => startCheckout("annual", userEmail)} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
+            <button onClick={() => handleSubscribe("annual")} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 20px", fontSize: 15, fontWeight: 700, border: "none" }}>
               Subscribe Now
             </button>
+          </div>
+        </div>
+
+        {/* Optional demographics */}
+        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 560, margin: "0 auto 32px", textAlign: "left" }}>
+          <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Help Us Serve You Better</p>
+          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 18, lineHeight: 1.5 }}>Optional — This information is kept private and never shared.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <select value={demographics.gender} onChange={e => setDemographics(d => ({ ...d, gender: e.target.value }))} style={subInputStyle}>
+              <option value="">Gender (optional)</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Other">Other</option>
+            </select>
+            <select value={demographics.age_range} onChange={e => setDemographics(d => ({ ...d, age_range: e.target.value }))} style={subInputStyle}>
+              <option value="">Age Range (optional)</option>
+              <option value="Under 18">Under 18</option>
+              <option value="18-24">18-24</option>
+              <option value="25-34">25-34</option>
+              <option value="35-44">35-44</option>
+              <option value="45-54">45-54</option>
+              <option value="55-64">55-64</option>
+              <option value="65+">65+</option>
+            </select>
+            <select value={demographics.race} onChange={e => setDemographics(d => ({ ...d, race: e.target.value }))} style={subInputStyle}>
+              <option value="">Race/Ethnicity (optional)</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+              <option value="Black/African American">Black/African American</option>
+              <option value="White/Caucasian">White/Caucasian</option>
+              <option value="Hispanic/Latino">Hispanic/Latino</option>
+              <option value="Asian/Pacific Islander">Asian/Pacific Islander</option>
+              <option value="Native American">Native American</option>
+              <option value="Mixed/Multiracial">Mixed/Multiracial</option>
+              <option value="Other">Other</option>
+            </select>
+            <select value={demographics.income_range} onChange={e => setDemographics(d => ({ ...d, income_range: e.target.value }))} style={subInputStyle}>
+              <option value="">Income Range (optional)</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+              <option value="Under $25K">Under $25K</option>
+              <option value="$25K-$50K">$25K-$50K</option>
+              <option value="$50K-$75K">$50K-$75K</option>
+              <option value="$75K-$100K">$75K-$100K</option>
+              <option value="$100K-$150K">$100K-$150K</option>
+              <option value="$150K+">$150K+</option>
+            </select>
+            <input placeholder="Profession (optional)" value={demographics.profession} onChange={e => setDemographics(d => ({ ...d, profession: e.target.value }))} style={subInputStyle} />
+            <select value={demographics.heard_from} onChange={e => setDemographics(d => ({ ...d, heard_from: e.target.value }))} style={subInputStyle}>
+              <option value="">How did you hear about us? (optional)</option>
+              <option value="Social Media">Social Media</option>
+              <option value="Friend/Family">Friend/Family</option>
+              <option value="Search Engine">Search Engine</option>
+              <option value="Advertisement">Advertisement</option>
+              <option value="News Article">News Article</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
         </div>
 
@@ -3397,11 +3539,14 @@ setSchedulesByChannel(sched);
       .then(r => r.json())
       .then(data => {
         if (data.subscription_status === "active" || data.payment_status === "paid") {
+          const pendingDemo = (() => { try { return JSON.parse(localStorage.getItem("nubian_pending_demographics") || "null"); } catch { return null; } })();
+          localStorage.removeItem("nubian_pending_demographics");
           const sub = {
             subscribed: true,
             plan: data.plan,
             customer_email: data.customer_email,
             customer_id: data.customer_id,
+            ...(pendingDemo || {}),
           };
           saveSubscription(sub);
           setSubscription(sub);
