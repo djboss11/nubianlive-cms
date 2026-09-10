@@ -3658,6 +3658,7 @@ setSchedulesByChannel(sched);
     if (!ref) return;
     localStorage.setItem("nubian_ref", ref);
     fetch(`${API_BASE}/api/affiliate/click?ref=${encodeURIComponent(ref)}`, { method: "POST" }).catch(() => {});
+    setPage("subscribe");
   }, []);
 
   // Verify Stripe session on redirect back from checkout
