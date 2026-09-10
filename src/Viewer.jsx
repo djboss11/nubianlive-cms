@@ -2899,10 +2899,10 @@ function PaywallModal({ item, onClose, userEmail }) {
   );
 }
 
-function SubscribePage({ navigate, onGuestActivated, userEmail }) {
+function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
-  const { loginWithRedirect } = useAuth0();
+  const { loginWithPopup, getIdTokenClaims } = useAuth0();
 
   const paidFeatures = ["Full VOD library access", "Live TV channels", "New content weekly", "Watch on any device"];
   const freeFeatures = ["Live TV channels", "Nubian Radio", "PPV events", "No credit card required"];
@@ -2911,6 +2911,7 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   const [guestStatus, setGuestStatus] = useState(null);
   const [guestError, setGuestError] = useState("");
   const [formError, setFormError] = useState("");
+  const [freeLoading, setFreeLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "", email: "", city: "", state: "", country: "",
@@ -2968,13 +2969,30 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
     const err = validate();
     if (err) { setFormError(err); return; }
     setFormError("");
-    localStorage.setItem("nubian_pending_demographics", JSON.stringify(buildPending()));
-    await loginWithRedirect({
-      authorizationParams: {
-        screen_hint: "signup",
-        login_hint: form.email.trim(),
-      },
-    });
+    setFreeLoading(true);
+    try {
+      await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
+      const claims = await getIdTokenClaims();
+      const googleEmail = claims?.email ?? form.email.trim();
+      const googleName = claims?.name ?? form.name.trim();
+
+      const profile = { ...buildPending(), google_email: googleEmail, google_name: googleName };
+      localStorage.setItem("nubian_free_profile", JSON.stringify(profile));
+
+      fetch(`${API_BASE}/api/subscribers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: googleName, email: googleEmail, plan: "free", country: form.country }),
+      }).catch(() => {});
+
+      const sub = { subscribed: false, plan: "free", email: googleEmail };
+      saveSubscription(sub);
+      onFreeActivated(sub);
+    } catch (e) {
+      if (e.message && !e.message.includes("closed")) setFormError("Google sign-in failed. Please try again.");
+    } finally {
+      setFreeLoading(false);
+    }
   }
 
   async function activateGuestCode() {
@@ -3110,8 +3128,9 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
                 </li>
               ))}
             </ul>
-            <button onClick={handleFreeSignup} style={{ width: "100%", background: "var(--surface)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "1px solid var(--border)", cursor: "pointer" }}>
-              Create Free Account
+            <button onClick={handleFreeSignup} disabled={freeLoading} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "white", color: "#1a1a1a", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 600, border: "none", cursor: freeLoading ? "not-allowed" : "pointer", opacity: freeLoading ? 0.6 : 1 }}>
+              <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+              {freeLoading ? "Signing in…" : "Continue with Google"}
             </button>
           </div>
 
@@ -3780,7 +3799,7 @@ setSchedulesByChannel(sched);
         {page === "terms" && <TermsPage />}
         {page === "contact" && <ContactPage />}
         {page === "affiliate" && <AffiliatePage />}
-        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} userEmail={userEmail} />}
+        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} onFreeActivated={sub => { setSubscription(sub); navigate("live"); }} userEmail={userEmail} />}
           </>
         )}
       </div>
