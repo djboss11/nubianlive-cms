@@ -2022,10 +2022,16 @@ function LoginModal({ onClose }) {
           padding: "12px 20px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
           opacity: loading === "email" ? 0.6 : 1,
         }}>
-          {loading === "email" ? "Please wait..." : tab === "signup" ? "Create Account" : "Sign In"}
+          {loading === "email" ? "Please wait..." : tab === "signup" ? "Create Free Account" : "Sign In"}
         </button>
 
-        <div style={{ fontSize: 12, color: "var(--text3)", textAlign: "center", marginTop: 16 }}>
+        {tab === "signup" && (
+          <div style={{ fontSize: 13, color: "var(--text2)", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+            Free account includes Live TV, Nubian Radio &amp; PPV. Subscribe for full VOD library access.
+          </div>
+        )}
+
+        <div style={{ fontSize: 12, color: "var(--text3)", textAlign: "center", marginTop: 12 }}>
           By continuing you agree to our Terms of Service and Privacy Policy.
         </div>
       </div>
@@ -2042,11 +2048,19 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
   const [menuOpen, setMenuOpen] = useState(false);
   const [ownerDropOpen, setOwnerDropOpen] = useState(false);
   const ownerDropRef = useRef(null);
+  const [guestDropOpen, setGuestDropOpen] = useState(false);
+  const guestDropRef = useRef(null);
   const { t } = useLang();
   const isMobile = w < 768;
 
   useEffect(() => {
     const handler = (e) => { if (ownerDropRef.current && !ownerDropRef.current.contains(e.target)) setOwnerDropOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => { if (guestDropRef.current && !guestDropRef.current.contains(e.target)) setGuestDropOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -2132,7 +2146,17 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
                 )}
               </div>
             ) : subscription?.guest ? (
-              <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
+              <div ref={guestDropRef} style={{ position: "relative" }}>
+                <button onClick={() => setGuestDropOpen(o => !o)} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Guest ▾</button>
+                {guestDropOpen && (
+                  <div style={{ position: "absolute", top: 42, right: 0, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 0", minWidth: 160, zIndex: 200, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                    <button onClick={() => { onLogout(); setGuestDropOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", color: "#f87171", padding: "10px 18px", fontSize: 13, border: "none", cursor: "pointer" }}
+                      onMouseEnter={e => e.target.style.background = "var(--surface)"}
+                      onMouseLeave={e => e.target.style.background = "transparent"}
+                    >Sign Out</button>
+                  </div>
+                )}
+              </div>
             ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
             ) : IS_FIRE_TV ? null : (
@@ -2195,7 +2219,10 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
             {subscription?.plan === "owner" ? (
               <span style={{ background: "linear-gradient(135deg, #ffd700, #ff9500)", color: "black", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>OWNER</span>
             ) : subscription?.guest ? (
-              <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
+              <>
+                <span style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Guest</span>
+                <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "#f87171", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
+              </>
             ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
             ) : IS_FIRE_TV ? null : (
@@ -2929,6 +2956,9 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
   return (
     <div style={{ minHeight: "100vh", paddingTop: 100, paddingBottom: 80 }}>
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 20px", marginBottom: 32, display: "inline-block" }}>
+          <span style={{ fontSize: 14, color: "var(--text2)" }}>Already have a free account? <strong style={{ color: "white" }}>Upgrade to unlock the full VOD library.</strong></span>
+        </div>
         <div style={{ marginBottom: 12 }}>
           <span style={{ background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>Stream Now</span>
         </div>
@@ -2975,6 +3005,12 @@ function SubscribePage({ navigate, onGuestActivated, userEmail }) {
             </button>
           </div>
         </div>
+
+        {/* No account nudge */}
+        <p style={{ color: "var(--text3)", fontSize: 14, marginBottom: 32 }}>
+          Don't have an account yet?{" "}
+          <strong style={{ color: "var(--text2)" }}>Create a free account first to watch Live TV.</strong>
+        </p>
 
         {/* Optional demographics */}
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 560, margin: "0 auto 32px", textAlign: "left" }}>
