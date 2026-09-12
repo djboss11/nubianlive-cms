@@ -1944,14 +1944,13 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
 function LoginModal({ onClose }) {
   const { loginWithPopup } = useAuth0();
   const [tab, setTab] = useState("signup");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(null); // "google" | "email" | null
+  const [loading, setLoading] = useState(null); // "google" | "continue" | null
   const [error, setError] = useState("");
 
   const handleGoogle = async () => {
     setLoading("google"); setError("");
     try {
-      await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
+      await loginWithPopup({ authorizationParams: { connection: "google-oauth2", ...(tab === "signup" ? { screen_hint: "signup" } : {}) } });
       gtag("event", "login", { method: "google" });
       onClose();
     } catch (e) {
@@ -1959,13 +1958,14 @@ function LoginModal({ onClose }) {
     } finally { setLoading(null); }
   };
 
-  const handleEmail = async () => {
-    if (!email.trim()) { setError("Please enter your email."); return; }
-    setLoading("email"); setError("");
+  // "Sign In" / "Create Account" both hand off straight to Auth0's own hosted
+  // login screen, which is where email + password actually get collected —
+  // there's no separate local email/password step here to avoid asking twice.
+  const handleContinue = async () => {
+    setLoading("continue"); setError("");
     try {
       await loginWithPopup({
         authorizationParams: {
-          login_hint: email.trim(),
           ...(tab === "signup" ? { screen_hint: "signup" } : {}),
         },
       });
@@ -1975,8 +1975,6 @@ function LoginModal({ onClose }) {
       if (e.message && !e.message.includes("closed")) setError("Sign-in failed. Please try again.");
     } finally { setLoading(null); }
   };
-
-  const inp = { width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
@@ -2015,19 +2013,14 @@ function LoginModal({ onClose }) {
           <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" style={inp} />
-          <input type="password" placeholder="Password" style={inp} />
-        </div>
-
         {error && <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</div>}
 
-        <button onClick={handleEmail} disabled={!!loading} style={{
+        <button onClick={handleContinue} disabled={!!loading} style={{
           width: "100%", background: "var(--accent)", color: "white", borderRadius: 10,
           padding: "12px 20px", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
-          opacity: loading === "email" ? 0.6 : 1,
+          opacity: loading === "continue" ? 0.6 : 1,
         }}>
-          {loading === "email" ? "Please wait..." : tab === "signup" ? "Create Free Account" : "Sign In"}
+          {loading === "continue" ? "Please wait..." : tab === "signup" ? "Create Account" : "Sign In"}
         </button>
 
         {tab === "signup" && (
@@ -2978,28 +2971,31 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
     try {
       if (IS_FIRE_TV) {
         localStorage.setItem("nubian_pending_free_profile", JSON.stringify(buildPending()));
-        await loginWithRedirect({ authorizationParams: { connection: "google-oauth2", screen_hint: "signup" } });
+        await loginWithRedirect({ authorizationParams: { screen_hint: "signup", login_hint: form.email.trim() || undefined } });
         return;
       }
-      await loginWithPopup({ authorizationParams: { connection: "google-oauth2" } });
+      // Let Auth0's hosted screen offer both email/password and Google — free
+      // signup isn't limited to Google, it just uses whatever account the
+      // person creates or logs into.
+      await loginWithPopup({ authorizationParams: { screen_hint: "signup", login_hint: form.email.trim() || undefined } });
       const claims = await getIdTokenClaims();
-      const googleEmail = claims?.email ?? form.email.trim();
-      const googleName = claims?.name ?? form.name.trim();
+      const accountEmail = claims?.email ?? form.email.trim();
+      const accountName = claims?.name ?? form.name.trim();
 
-      const profile = { ...buildPending(), google_email: googleEmail, google_name: googleName };
+      const profile = { ...buildPending(), google_email: accountEmail, google_name: accountName };
       localStorage.setItem("nubian_free_profile", JSON.stringify(profile));
 
       fetch(`${API_BASE}/api/subscribers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: googleName, email: googleEmail, plan: "free", country: form.country }),
+        body: JSON.stringify({ name: accountName, email: accountEmail, plan: "free", country: form.country }),
       }).catch(() => {});
 
-      const sub = { subscribed: false, plan: "free", email: googleEmail };
+      const sub = { subscribed: false, plan: "free", email: accountEmail };
       saveSubscription(sub);
       onFreeActivated(sub);
     } catch (e) {
-      if (e.message && !e.message.includes("closed")) setFormError("Google sign-in failed. Please try again.");
+      if (e.message && !e.message.includes("closed")) setFormError("Sign-up failed. Please try again.");
     } finally {
       setFreeLoading(false);
     }
@@ -3138,9 +3134,8 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
                 </li>
               ))}
             </ul>
-            <button onClick={handleFreeSignup} disabled={freeLoading} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "white", color: "#1a1a1a", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 600, border: "none", cursor: freeLoading ? "not-allowed" : "pointer", opacity: freeLoading ? 0.6 : 1 }}>
-              <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-              {freeLoading ? "Signing in…" : "Continue with Google"}
+            <button onClick={handleFreeSignup} disabled={freeLoading} style={{ width: "100%", background: "var(--accent)", color: "white", borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 700, border: "none", cursor: freeLoading ? "not-allowed" : "pointer", opacity: freeLoading ? 0.6 : 1 }}>
+              {freeLoading ? "Signing up…" : "Get Started Free"}
             </button>
             {IS_FIRE_TV && (
               <p style={{ fontSize: 13, color: "var(--text3)", marginTop: 16, lineHeight: 1.6, textAlign: "center" }}>
