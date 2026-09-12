@@ -2157,9 +2157,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               </div>
             ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
-            ) : IS_FIRE_TV ? null : (
-              <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
-            )}
+            ) : null}
             <LanguageSwitcher />
             <NavUserWidget user={user} isAuthenticated={isAuthenticated} onLogin={onLogin} onLogout={onLogout} onManageSubscription={onManageSubscription} />
           </div>
@@ -2223,9 +2221,7 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               </>
             ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
-            ) : IS_FIRE_TV ? null : (
-              <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
-            )}
+            ) : null}
             {isAuthenticated ? (
               <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
             ) : (
@@ -2910,6 +2906,24 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
   const [guestError, setGuestError] = useState("");
   const [formError, setFormError] = useState("");
   const [freeLoading, setFreeLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // For returning users: skip the profile form entirely and go straight to
+  // Auth0's login screen. If they already have a stored subscription, send
+  // them back into the app instead of leaving them stuck on this page.
+  async function handleQuickLogin() {
+    setLoginLoading(true); setLoginError("");
+    try {
+      await loginWithPopup();
+      const existing = getSubscription();
+      if (existing?.subscribed) navigate("home");
+    } catch (e) {
+      if (e.message && !e.message.includes("closed")) setLoginError("Sign-in failed. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  }
 
   const [form, setForm] = useState({
     name: "", email: "", city: "", state: "", country: "",
@@ -3040,8 +3054,14 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
 
         {/* Onboarding form */}
         <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: isMobile ? 24 : 40, maxWidth: 620, margin: "0 auto 48px" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Create Your Account</div>
-          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>Fill in your details below, then choose a plan.</p>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 6 }}>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Create Your Account</div>
+            <button onClick={handleQuickLogin} disabled={loginLoading} style={{ background: "transparent", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: loginLoading ? "not-allowed" : "pointer", opacity: loginLoading ? 0.6 : 1, padding: 0 }}>
+              {loginLoading ? "Signing in…" : "Already have an account? Log in"}
+            </button>
+          </div>
+          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: loginError ? 8 : 24 }}>Fill in your details below, then choose a plan.</p>
+          {loginError && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 24 }}>{loginError}</div>}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {/* Required */}
@@ -3751,7 +3771,7 @@ setSchedulesByChannel(sched);
         onManageSubscription={handleManageSubscription}
         user={user}
         isAuthenticated={isAuthenticated}
-        onLogin={() => setShowLoginModal(true)}
+        onLogin={() => navigate("subscribe")}
         onLogout={handleLogout}
       />
 
