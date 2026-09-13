@@ -372,6 +372,18 @@ function parseAdBreaksFromSchedule(raw) {
   try { return JSON.parse(raw); } catch { return []; }
 }
 
+// Fire-and-forget play log for a linear-channel ad-break mp4 creative or the
+// site-wide filler/standby video — mirrors how VOD plays are logged via
+// POST /api/views, but counts once per playback start rather than per poll.
+function logAdPlay(video_id, play_type, channel) {
+  if (!video_id) return;
+  fetch(`${API_BASE}/api/ad-plays`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ video_id, play_type, channel: channel ?? null }),
+  }).catch(() => {});
+}
+
 // Returns { videoPos, isInAd, adSeek, adVideoId } given wall-clock seconds into the show
 function calcShowPosition(elapsedSec, adBreaks) {
   const breaks = adBreaks
@@ -514,6 +526,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
+            logAdPlay(fbId, "filler", channelName);
           }
         }
         return;
@@ -533,6 +546,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
+            logAdPlay(fbId, "filler", channelName);
           }
         }
         return;
@@ -553,6 +567,9 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       if (currentVideoIdRef.current !== targetId) {
         currentVideoIdRef.current = targetId;
         loadHls(hls(targetId), targetPos, false);
+        if (isInAd && adVideoId) {
+          logAdPlay(adVideoId, "ad_break", channelName);
+        }
       } else if (videoRef.current) {
         const drift = Math.abs(videoRef.current.currentTime - targetPos);
         if (drift > 15) videoRef.current.currentTime = targetPos;
