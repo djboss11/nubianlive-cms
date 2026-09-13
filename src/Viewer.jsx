@@ -375,12 +375,12 @@ function parseAdBreaksFromSchedule(raw) {
 // Fire-and-forget play log for a linear-channel ad-break mp4 creative or the
 // site-wide filler/standby video — mirrors how VOD plays are logged via
 // POST /api/views, but counts once per playback start rather than per poll.
-function logAdPlay(video_id, play_type, channel) {
+function logAdPlay(video_id, play_type, channel, userEmail) {
   if (!video_id) return;
   fetch(`${API_BASE}/api/ad-plays`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ video_id, play_type, channel: channel ?? null }),
+    body: JSON.stringify({ video_id, play_type, channel: channel ?? null, user_email: userEmail ?? null }),
   }).catch(() => {});
 }
 
@@ -433,7 +433,7 @@ function shiftScheduleByOffset(schedule, offsetHr) {
 
 // ── SCHEDULED CHANNEL COMPONENT ───────────────────────────────────────────────
 
-function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired }) {
+function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired, userEmail }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const currentVideoIdRef = useRef(null);
@@ -526,7 +526,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
-            logAdPlay(fbId, "filler", channelName);
+            logAdPlay(fbId, "filler", channelName, userEmail);
           }
         }
         return;
@@ -546,7 +546,7 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
-            logAdPlay(fbId, "filler", channelName);
+            logAdPlay(fbId, "filler", channelName, userEmail);
           }
         }
         return;
@@ -567,8 +567,12 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       if (currentVideoIdRef.current !== targetId) {
         currentVideoIdRef.current = targetId;
         loadHls(hls(targetId), targetPos, false);
-        if (isInAd && adVideoId) {
-          logAdPlay(adVideoId, "ad_break", channelName);
+        if (isInAd) {
+          // targetId here is either the show's own assigned mp4 ad-break creative,
+          // or — when no specific mp4 is set on the ad break (e.g. VAST/empty) —
+          // the platform's default ad slate reel (AD_SLATE_ID). That default reel
+          // always carries real rotating advertising, so it's counted the same way.
+          logAdPlay(targetId, "ad_break", channelName, userEmail);
         }
       } else if (videoRef.current) {
         const drift = Math.abs(videoRef.current.currentTime - targetPos);
@@ -1411,6 +1415,7 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
                     contentMap={contentMap}
                     fallbackVideoId={fallbackVideoId}
                     onMuteRequired={() => setMuted(true)}
+                    userEmail={userEmail}
                   />
                 ) : activeChannel.hlsUrl ? (
                   <video
