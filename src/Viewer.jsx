@@ -284,7 +284,6 @@ const DEFAULT_CATEGORIES = [
       { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT",      logo: "https://assets.nubianlive.com/live_africa.png"   },
       { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET", logo: "https://assets.nubianlive.com/live_europe.png"   },
       { id: 7,  title: "OFEG",                    thumb: "📺", type: "LIVE", tag: "LIVE", description: "OFEG",                      logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"           },
-      { id: 17, title: "The Humor Mill",          thumb: "📺", type: "LIVE", tag: "LIVE", description: "The Humor Mill",          logo: "https://assets.nubianlive.com/hmtvlogo.jpeg"        },
       { id: 8,  title: "The Chavis Chronicles",   thumb: "📺", type: "LIVE", tag: "LIVE", description: "The Chavis Chronicles",   logo: "https://assets.nubianlive.com/NubianLIVEicon.png"           },
       { id: 9,  title: "Nubian News",             thumb: "📺", type: "LIVE", tag: "LIVE", description: "Nubian News",             logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png" },
       { id: 10, title: "Washington Informer TV",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "Washington Informer TV",  logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"       },
@@ -312,7 +311,6 @@ const channels = [
   { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/live_africa.png"  },
   { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/live_europe.png"  },
   { id: 7, name: "OFEG",                    current: "OFEG",                  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"            },
-  { id: 11, name: "The Humor Mill",         current: "The Humor Mill",        next: "Coming Up", status: "live", thumb: "📺", hlsUrl: hls("31d19fe9cd697ac4763b07cb724e3e80"), syncLoop: true,  logo: "https://assets.nubianlive.com/hmtvlogo.jpeg"          },
   { id: 8, name: "The Chavis Chronicles",   current: "The Chavis Chronicles",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/ef727d59951122524e0261decc68083b/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianLIVEicon.png"             },
   { id: 9, name: "Nubian News",             current: "Nubian News",            next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/789f1e57e9771be5471781f2b9cdec82/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png"  },
   { id: 10, name: "Washington Informer TV", current: "Washington Informer TV",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/7f8799c2e9cd95f892bad3de05d1b188/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"        },
@@ -329,6 +327,12 @@ const searchResults = [
 // ── SCHEDULE HELPERS ──────────────────────────────────────────────────────────
 
 const AD_SLATE_ID = "5ddd6c7f8aa7108453155d183f200727";
+
+// Emails that get full access to every part of the app without going through
+// Stripe — the owner's own account, plus a dedicated Google Play / Amazon
+// Appstore reviewer login so app reviewers never need to pay or be given a
+// real personal account to complete their review.
+const FULL_ACCESS_EMAILS = ["leverettmedia@gmail.com", "leverettmedia+playreview@gmail.com"];
 
 const CHANNEL_TZ_OFFSETS = {
   Eastern: 0, Central: -1, Pacific: -3, "West Africa": 5, Europe: 6,
@@ -372,18 +376,6 @@ function parseAdBreaksFromSchedule(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
   try { return JSON.parse(raw); } catch { return []; }
-}
-
-// Fire-and-forget play log for a linear-channel ad-break mp4 creative or the
-// site-wide filler/standby video — mirrors how VOD plays are logged via
-// POST /api/views, but counts once per playback start rather than per poll.
-function logAdPlay(video_id, play_type, channel, userEmail) {
-  if (!video_id) return;
-  fetch(`${API_BASE}/api/ad-plays`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ video_id, play_type, channel: channel ?? null, user_email: userEmail ?? null }),
-  }).catch(() => {});
 }
 
 // Returns { videoPos, isInAd, adSeek, adVideoId } given wall-clock seconds into the show
@@ -435,7 +427,7 @@ function shiftScheduleByOffset(schedule, offsetHr) {
 
 // ── SCHEDULED CHANNEL COMPONENT ───────────────────────────────────────────────
 
-function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired, userEmail }) {
+function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName, schedulesByChannel, contentMap, fallbackVideoId, onMuteRequired }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const currentVideoIdRef = useRef(null);
@@ -528,7 +520,6 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
-            logAdPlay(fbId, "filler", channelName, userEmail);
           }
         }
         return;
@@ -548,7 +539,6 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
           if (currentVideoIdRef.current !== key) {
             currentVideoIdRef.current = key;
             loadHls(hls(fbId), 0, true);
-            logAdPlay(fbId, "filler", channelName, userEmail);
           }
         }
         return;
@@ -569,13 +559,6 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
       if (currentVideoIdRef.current !== targetId) {
         currentVideoIdRef.current = targetId;
         loadHls(hls(targetId), targetPos, false);
-        if (isInAd) {
-          // targetId here is either the show's own assigned mp4 ad-break creative,
-          // or — when no specific mp4 is set on the ad break (e.g. VAST/empty) —
-          // the platform's default ad slate reel (AD_SLATE_ID). That default reel
-          // always carries real rotating advertising, so it's counted the same way.
-          logAdPlay(targetId, "ad_break", channelName, userEmail);
-        }
       } else if (videoRef.current) {
         const drift = Math.abs(videoRef.current.currentTime - targetPos);
         if (drift > 15) videoRef.current.currentTime = targetPos;
@@ -1417,7 +1400,6 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
                     contentMap={contentMap}
                     fallbackVideoId={fallbackVideoId}
                     onMuteRequired={() => setMuted(true)}
-                    userEmail={userEmail}
                   />
                 ) : activeChannel.hlsUrl ? (
                   <video
@@ -2181,7 +2163,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               </div>
             ) : subscription?.subscribed ? (
               <button onClick={onManageSubscription} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Manage</button>
-            ) : null}
+            ) : IS_FIRE_TV ? null : (
+              <button onClick={() => setPage("subscribe")} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Subscribe</button>
+            )}
             <LanguageSwitcher />
             <NavUserWidget user={user} isAuthenticated={isAuthenticated} onLogin={onLogin} onLogout={onLogout} onManageSubscription={onManageSubscription} />
           </div>
@@ -2245,7 +2229,9 @@ function Navbar({ page, setPage, searchQuery, setSearchQuery, scrolled, onRadioC
               </>
             ) : subscription?.subscribed ? (
               <button onClick={() => { onManageSubscription(); setMenuOpen(false); }} style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>Manage Subscription</button>
-            ) : null}
+            ) : IS_FIRE_TV ? null : (
+              <button onClick={() => { setPage("subscribe"); setMenuOpen(false); }} style={{ background: "var(--accent)", color: "white", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 700 }}>Subscribe</button>
+            )}
             {isAuthenticated ? (
               <button onClick={() => { onLogout(); setMenuOpen(false); }} style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Sign Out</button>
             ) : (
@@ -2377,27 +2363,45 @@ function PrivacyPage() {
   return (
     <PageShell>
       <PageHeading>Privacy Policy</PageHeading>
-      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1, marginBottom: 32 }}>LAST UPDATED: MARCH 2026</div>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1, marginBottom: 32 }}>LAST UPDATED: SEPTEMBER 2026</div>
       <PageBody>
-        <p>Nubian Television ("we", "us", or "our") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.</p>
+        <p>This policy explains what information Nubian Television collects when you watch, subscribe, or partner with us as an affiliate, producer, or advertiser — and what we do with it. It applies to our Fire TV and Android apps, nubianlive.com, and our Partner &amp; Admin Portal at cms.nubianlive.com. Nubian Television is operated by Leverett Media ("we", "us", or "our").</p>
+
         <SectionTitle>Information We Collect</SectionTitle>
-        <p><strong style={{ color: "var(--text)" }}>Account Information:</strong> Name, email address, and payment details when you register or subscribe.</p>
-        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Usage Data:</strong> Pages visited, content watched, watch history, search queries, and device information.</p>
-        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Technical Data:</strong> IP address, browser type, operating system, and cookies.</p>
+        <p><strong style={{ color: "var(--text)" }}>Account information:</strong> your name and email address. Sign-in is handled by our authentication provider, Auth0, and you can optionally sign in with Google instead of setting a password.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Subscription and payment information:</strong> payments are processed by Stripe. We don't receive or store your full card number — we keep your plan, status, country, and spend so we can manage your access and support you.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Viewing and usage data:</strong> what you watch, how long you watch, and interactions with ads, used to run the service and to report accurate viewership to producers and advertisers.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Affiliate program information:</strong> if you apply to our affiliate program, we collect your name, email, PayPal email, organization, and assign a referral code. We also ask a few optional demographic questions (gender, age range, race/ethnicity, income range, profession, how you heard about the program) — these are voluntary, used only in aggregate for outreach and reporting, and don't affect your acceptance into the program.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Producer and advertiser information:</strong> name, email, company, and performance data tied to your content or campaigns, so we can share accurate reporting and process payouts.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Device and technical data:</strong> standard information like device type, app version, IP address, and basic crash/diagnostic data, collected automatically to keep the app running reliably.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Cookies and local storage:</strong> used to keep you signed in between visits. We don't use these for third-party advertising or cross-site tracking.</p>
+
         <SectionTitle>How We Use Your Information</SectionTitle>
-        <p>We use your data to: provide and personalise our streaming service; process subscription payments; send account-related communications; improve our platform and content recommendations; comply with legal obligations.</p>
+        <p>We use your data to: create and maintain your account across devices; process subscriptions, one-time purchases, and affiliate or producer payouts; deliver and improve our content and live channels; calculate and report viewership, referral, and ad performance to producers, affiliates, and advertisers; send service, billing, and program-related communications (including your affiliate welcome email); and detect and prevent fraud or abuse. We do not sell your personal information, and we don't use your viewing history to serve third-party advertising off our platform.</p>
+
         <SectionTitle>Data Sharing</SectionTitle>
-        <p>We do not sell your personal data. We may share data with trusted third-party providers (such as payment processors and analytics services) strictly to operate our service. All third parties are contractually bound to protect your data.</p>
-        <SectionTitle>Cookies</SectionTitle>
-        <p>We use cookies to maintain your session, remember preferences, and analyse traffic. You can disable cookies in your browser settings, though some features may not function correctly.</p>
-        <SectionTitle>Data Retention</SectionTitle>
-        <p>We retain your data for as long as your account is active or as required by law. You may request deletion of your account and associated data at any time.</p>
+        <p>We share information only with the service providers who help us run Nubian Television, and only to operate the service: Auth0 (sign-in), Stripe (billing), PayPal (affiliate payouts), Cloudflare (hosting, database, and video delivery), and Google (optional sign-in). We don't sell your personal data. We may also disclose information if required by law, or in connection with a merger, acquisition, or sale of assets — in which case this policy would continue to apply under the new ownership.</p>
+
+        <SectionTitle>How Long We Keep It</SectionTitle>
+        <p>We keep account and transaction information for as long as your account is active, and for a reasonable period afterward for tax, accounting, and legal purposes. Affiliate demographic survey responses are retained only in aggregate once no longer tied to program administration.</p>
+
         <SectionTitle>Your Rights</SectionTitle>
-        <p>Depending on your location, you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact us at <span style={{ color: "var(--accent)" }}>privacy@nubianlive.com</span>.</p>
+        <p>Affiliates, producers, and advertisers can review and update their own profile from their dashboard at cms.nubianlive.com. Anyone can request a copy of their information, or request that we delete their account and associated personal information, by emailing us at <span style={{ color: "var(--accent)" }}>leverettmedia@gmail.com</span>. We'll complete verified requests within a reasonable time, subject to the retention needs above. If you're covered by a state or other privacy law that grants additional rights, we'll honor requests made under that law the same way.</p>
+
+        <SectionTitle>Children's Privacy</SectionTitle>
+        <p>Nubian Television is not directed to children under 13, and we do not knowingly collect personal information from children under 13. If we learn we've collected a child's personal information without parental consent, we'll delete it.</p>
+
         <SectionTitle>Security</SectionTitle>
-        <p>We use industry-standard encryption and security measures to protect your data. However, no method of transmission over the internet is 100% secure.</p>
+        <p>We use industry-standard safeguards, including encrypted connections and access controls on our infrastructure, to protect your information. No method of transmission or storage is completely secure, but we work to protect your data and respond quickly if something goes wrong.</p>
+
+        <SectionTitle>Where Data Is Processed</SectionTitle>
+        <p>Nubian Television is operated from, and our infrastructure is located in, the United States. If you access our services from elsewhere, your information will be transferred to and processed in the United States.</p>
+
         <SectionTitle>Changes to This Policy</SectionTitle>
-        <p>We may update this policy periodically. We will notify you of significant changes via email or a notice on our platform.</p>
+        <p>We may update this policy as our services change. If we make material changes, we'll update the date above and, where appropriate, notify affiliates, producers, and advertisers by email.</p>
+
+        <SectionTitle>Contact</SectionTitle>
+        <p>Questions about this policy, or requests regarding your personal information, can be sent to <span style={{ color: "var(--accent)" }}>leverettmedia@gmail.com</span>.</p>
       </PageBody>
     </PageShell>
   );
@@ -2430,6 +2434,31 @@ function TermsPage() {
         <p>We may update these Terms at any time. Continued use of the platform after changes constitutes acceptance of the new Terms.</p>
         <SectionTitle>10. Contact</SectionTitle>
         <p>For questions about these Terms, contact us at <span style={{ color: "var(--accent)" }}>legal@nubianlive.com</span>.</p>
+      </PageBody>
+    </PageShell>
+  );
+}
+
+function DeleteAccountPage() {
+  return (
+    <PageShell>
+      <PageHeading>Delete Your Account</PageHeading>
+      <div style={{ color: "var(--text3)", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1, marginBottom: 32 }}>ACCOUNT &amp; DATA DELETION</div>
+      <PageBody>
+        <p>You can request deletion of your Nubian Television account and the personal data associated with it at any time. This applies whether you signed up as a viewer, affiliate, producer, or advertiser.</p>
+
+        <SectionTitle>How to request deletion</SectionTitle>
+        <p>Send an email to <span style={{ color: "var(--accent)" }}>leverettmedia@gmail.com</span> from the email address on your account, with the subject line "Delete My Account." We'll verify the request and confirm with you once it's complete.</p>
+
+        <SectionTitle>What gets deleted</SectionTitle>
+        <p><strong style={{ color: "var(--text)" }}>Deleted:</strong> your profile (name and email), viewing history, and — if applicable — your affiliate, producer, or advertiser profile information.</p>
+        <p style={{ marginTop: 12 }}><strong style={{ color: "var(--text)" }}>Retained where required:</strong> billing and transaction records tied to completed subscriptions or purchases, which we keep for a limited period to meet tax, accounting, and legal obligations, and any information that has already been provided in aggregate, anonymized reporting.</p>
+
+        <SectionTitle>How long it takes</SectionTitle>
+        <p>We complete verified deletion requests within 30 days. If any part of the request can't be completed (for example, records we're required to retain), we'll let you know what was deleted and what was retained, and why.</p>
+
+        <SectionTitle>Questions</SectionTitle>
+        <p>See our <span style={{ color: "var(--accent)" }}>Privacy Policy</span> for the full details on what we collect and how we use it, or reach out to <span style={{ color: "var(--accent)" }}>leverettmedia@gmail.com</span> with any questions.</p>
       </PageBody>
     </PageShell>
   );
@@ -2930,24 +2959,6 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
   const [guestError, setGuestError] = useState("");
   const [formError, setFormError] = useState("");
   const [freeLoading, setFreeLoading] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-
-  // For returning users: skip the profile form entirely and go straight to
-  // Auth0's login screen. If they already have a stored subscription, send
-  // them back into the app instead of leaving them stuck on this page.
-  async function handleQuickLogin() {
-    setLoginLoading(true); setLoginError("");
-    try {
-      await loginWithPopup();
-      const existing = getSubscription();
-      if (existing?.subscribed) navigate("home");
-    } catch (e) {
-      if (e.message && !e.message.includes("closed")) setLoginError("Sign-in failed. Please try again.");
-    } finally {
-      setLoginLoading(false);
-    }
-  }
 
   const [form, setForm] = useState({
     name: "", email: "", city: "", state: "", country: "",
@@ -3029,6 +3040,12 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
         body: JSON.stringify({ name: accountName, email: accountEmail, plan: "free", country: form.country }),
       }).catch(() => {});
 
+      fetch("https://api.nubianlive.com/api/email/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: accountName, email: accountEmail }),
+      }).catch(() => {});
+
       const sub = { subscribed: false, plan: "free", email: accountEmail };
       saveSubscription(sub);
       onFreeActivated(sub);
@@ -3078,14 +3095,8 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
 
         {/* Onboarding form */}
         <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: isMobile ? 24 : 40, maxWidth: 620, margin: "0 auto 48px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 6 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Create Your Account</div>
-            <button onClick={handleQuickLogin} disabled={loginLoading} style={{ background: "transparent", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: loginLoading ? "not-allowed" : "pointer", opacity: loginLoading ? 0.6 : 1, padding: 0 }}>
-              {loginLoading ? "Signing in…" : "Already have an account? Log in"}
-            </button>
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: loginError ? 8 : 24 }}>Fill in your details below, then choose a plan.</p>
-          {loginError && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 24 }}>{loginError}</div>}
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Create Your Account</div>
+          <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>Fill in your details below, then choose a plan.</p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {/* Required */}
@@ -3520,7 +3531,7 @@ export default function NubianLiveViewer() {
   const [fallbackVideoId, setFallbackVideoId] = useState(null);
   const t = T[lang];
   const userEmail = user?.email ?? null;
-  const isOwner = subscription?.plan === "owner" || userEmail === "leverettmedia@gmail.com";
+  const isOwner = subscription?.plan === "owner" || FULL_ACCESS_EMAILS.includes(userEmail);
   const isGuest = subscription?.plan === "guest";
 
   useEffect(() => {
@@ -3599,7 +3610,7 @@ setSchedulesByChannel(sched);
   // On Auth0 login: owner bypass, link subscription, or redirect to subscribe
   useEffect(() => {
     if (!isAuthenticated || !user) return;
-    if (userEmail === "leverettmedia@gmail.com") {
+    if (FULL_ACCESS_EMAILS.includes(userEmail)) {
       const ownerSub = { subscribed: true, plan: "owner", email: userEmail };
       saveSubscription(ownerSub);
       setSubscription(ownerSub);
@@ -3645,7 +3656,11 @@ setSchedulesByChannel(sched);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (window.location.pathname === "/affiliate") setPage("affiliate");
+    // Lets a direct link (e.g. what an app-store reviewer pastes in for a
+    // privacy policy URL) load straight into that page instead of the homepage.
+    const staticPages = { "/affiliate": "affiliate", "/privacy": "privacy", "/terms": "terms", "/about": "about", "/help": "help", "/contact": "contact", "/delete-account": "delete-account" };
+    const match = staticPages[window.location.pathname];
+    if (match) setPage(match);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openDetail = useCallback((item) => {
@@ -3741,6 +3756,11 @@ setSchedulesByChannel(sched);
           };
           saveSubscription(sub);
           setSubscription(sub);
+          fetch("https://api.nubianlive.com/api/email/subscription", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: data.customer_email, plan: data.plan }),
+          }).catch(() => {});
           const ref_code = localStorage.getItem("nubian_ref");
           if (ref_code) {
             fetch(`${API_BASE}/api/affiliate/convert`, {
@@ -3795,7 +3815,7 @@ setSchedulesByChannel(sched);
         onManageSubscription={handleManageSubscription}
         user={user}
         isAuthenticated={isAuthenticated}
-        onLogin={() => navigate("subscribe")}
+        onLogin={() => setShowLoginModal(true)}
         onLogout={handleLogout}
       />
 
@@ -3856,6 +3876,7 @@ setSchedulesByChannel(sched);
         {page === "help" && <HelpPage />}
         {page === "privacy" && <PrivacyPage />}
         {page === "terms" && <TermsPage />}
+        {page === "delete-account" && <DeleteAccountPage />}
         {page === "contact" && <ContactPage />}
         {page === "affiliate" && <AffiliatePage />}
         {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} onFreeActivated={sub => { setSubscription(sub); navigate("live"); }} userEmail={userEmail} />}
