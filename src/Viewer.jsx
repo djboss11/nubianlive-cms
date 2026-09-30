@@ -1947,7 +1947,7 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
 
 // ── LOGIN MODAL ───────────────────────────────────────────────────────────────
 
-function LoginModal({ onClose }) {
+function LoginModal({ onClose, onSuccess }) {
   const { loginWithPopup } = useAuth0();
   const [tab, setTab] = useState("signup");
   const [loading, setLoading] = useState(null); // "google" | "continue" | null
@@ -1958,7 +1958,7 @@ function LoginModal({ onClose }) {
     try {
       await loginWithPopup({ authorizationParams: { connection: "google-oauth2", ...(tab === "signup" ? { screen_hint: "signup" } : {}) } });
       gtag("event", "login", { method: "google" });
-      onClose();
+      (onSuccess ?? onClose)();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Google sign-in failed. Please try again.");
     } finally { setLoading(null); }
@@ -1976,7 +1976,7 @@ function LoginModal({ onClose }) {
         },
       });
       gtag("event", "login", { method: "email" });
-      onClose();
+      (onSuccess ?? onClose)();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Sign-in failed. Please try again.");
     } finally { setLoading(null); }
@@ -3618,7 +3618,7 @@ setSchedulesByChannel(sched);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // On Auth0 login: owner bypass, link subscription, or redirect to subscribe
+  // On Auth0 login: owner bypass, link subscription, or redirect based on plan
   useEffect(() => {
     if (!isAuthenticated || !user) return;
     if (FULL_ACCESS_EMAILS.includes(userEmail)) {
@@ -3635,7 +3635,7 @@ setSchedulesByChannel(sched);
         setSubscription(updated);
       }
     } else {
-      setPage("subscribe");
+      setPage(existing?.plan === "free" ? "live" : "subscribe");
     }
   }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -3650,6 +3650,15 @@ setSchedulesByChannel(sched);
     setPlaying(null);
     setDetailItem(null);
   }, []);
+
+  // Reads the stored subscription and routes to the right page after login.
+  const navigateAfterLogin = useCallback(() => {
+    const sub = getSubscription();
+    const plan = sub?.plan;
+    if (plan === "free") navigate("live");
+    else if (["monthly", "annual", "owner", "guest"].includes(plan)) navigate("home");
+    else navigate("subscribe");
+  }, [navigate]);
 
   useEffect(() => {
     const slugToChannel = {
@@ -3755,9 +3764,9 @@ setSchedulesByChannel(sched);
   useEffect(() => {
     if (pendingRefLogin && isAuthenticated) {
       setPendingRefLogin(false);
-      navigate("home");
+      navigateAfterLogin();
     }
-  }, [isAuthenticated, pendingRefLogin, navigate]);
+  }, [isAuthenticated, pendingRefLogin, navigateAfterLogin]);
 
   // Verify Stripe session on redirect back from checkout
   useEffect(() => {
@@ -3917,7 +3926,7 @@ setSchedulesByChannel(sched);
         />
       )}
 
-      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} onSuccess={() => { setShowLoginModal(false); navigateAfterLogin(); }} />}
 
       {/* Footer */}
       <div style={{ background: "var(--bg2)", borderTop: "1px solid var(--border)", padding: `40px ${footerPad}px`, marginTop: 60 }}>
