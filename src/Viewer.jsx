@@ -2946,7 +2946,7 @@ function PaywallModal({ item, onClose, userEmail }) {
   );
 }
 
-function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail }) {
+function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail, onLogin }) {
   const w = useWindowWidth();
   const isMobile = w < 640;
   const { loginWithPopup, loginWithRedirect, getIdTokenClaims } = useAuth0();
@@ -3239,6 +3239,16 @@ function SubscribePage({ navigate, onGuestActivated, onFreeActivated, userEmail 
           )}
         </div>
 
+        {/* Sign in link */}
+        {onLogin && (
+          <p style={{ color: "var(--text3)", fontSize: 14, marginBottom: 32 }}>
+            Already have an account?{" "}
+            <button onClick={onLogin} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+              Sign In
+            </button>
+          </p>
+        )}
+
         {/* Guest code */}
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 28, background: "var(--surface2)", maxWidth: 480, margin: "0 auto" }}>
           <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Have a Guest Code?</p>
@@ -3511,7 +3521,7 @@ function SplashScreen({ onDone }) {
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function NubianLiveViewer() {
-  const { user, isAuthenticated, logout } = useAuth0();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth0();
   const w = useWindowWidth();
   const [splashDone, setSplashDone] = useState(() => !!sessionStorage.getItem(SPLASH_SESSION_KEY));
   const [page, setPage] = useState("home");
@@ -3724,15 +3734,16 @@ setSchedulesByChannel(sched);
     }
   }, [subscription, navigate]);
 
-  // Track referral clicks on app load
+  // Track referral clicks on app load; wait for auth to resolve before navigating
   useEffect(() => {
+    if (authLoading) return;
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     if (!ref) return;
     localStorage.setItem("nubian_ref", ref);
     fetch(`${API_BASE}/api/affiliate/click?ref=${encodeURIComponent(ref)}`, { method: "POST" }).catch(() => {});
-    setPage("subscribe");
-  }, []);
+    navigate(isAuthenticated ? "home" : "subscribe");
+  }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Verify Stripe session on redirect back from checkout
   useEffect(() => {
@@ -3879,7 +3890,7 @@ setSchedulesByChannel(sched);
         {page === "delete-account" && <DeleteAccountPage />}
         {page === "contact" && <ContactPage />}
         {page === "affiliate" && <AffiliatePage />}
-        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} onFreeActivated={sub => { setSubscription(sub); navigate("live"); }} userEmail={userEmail} />}
+        {page === "subscribe" && <SubscribePage navigate={navigate} onGuestActivated={sub => { setSubscription(sub); navigate("home"); }} onFreeActivated={sub => { setSubscription(sub); navigate("live"); }} userEmail={userEmail} onLogin={() => setShowLoginModal(true)} />}
           </>
         )}
       </div>
