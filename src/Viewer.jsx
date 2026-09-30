@@ -3634,8 +3634,35 @@ setSchedulesByChannel(sched);
         saveSubscription(updated);
         setSubscription(updated);
       }
+    } else if (existing?.plan === "free") {
+      setPage("live");
+    } else if (!existing) {
+      // Nothing in localStorage — check the database
+      if (!userEmail) { setPage("subscribe"); return; }
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/subscribers?email=${encodeURIComponent(userEmail)}`);
+          if (!res.ok) { setPage("subscribe"); return; }
+          const data = await res.json();
+          if (data?.plan === "free") {
+            const sub = { subscribed: false, plan: "free", email: userEmail };
+            saveSubscription(sub);
+            setSubscription(sub);
+            setPage("live");
+          } else if (data?.plan === "monthly" || data?.plan === "annual") {
+            const sub = { subscribed: true, plan: data.plan, customer_email: userEmail, email: userEmail };
+            saveSubscription(sub);
+            setSubscription(sub);
+            setPage("home");
+          } else {
+            setPage("subscribe");
+          }
+        } catch {
+          setPage("subscribe");
+        }
+      })();
     } else {
-      setPage(existing?.plan === "free" ? "live" : "subscribe");
+      setPage("subscribe");
     }
   }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
