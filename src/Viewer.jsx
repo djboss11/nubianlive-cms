@@ -3536,6 +3536,7 @@ export default function NubianLiveViewer() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [contentLoading, setContentLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingRefLogin, setPendingRefLogin] = useState(false);
   const [schedulesByChannel, setSchedulesByChannel] = useState({});
   const [contentMap, setContentMap] = useState({});
   const [fallbackVideoId, setFallbackVideoId] = useState(null);
@@ -3734,7 +3735,7 @@ setSchedulesByChannel(sched);
     }
   }, [subscription, navigate]);
 
-  // Track referral clicks on app load; wait for auth to resolve before navigating
+  // Track referral clicks on app load; open LoginModal so new and existing users can auth
   useEffect(() => {
     if (authLoading) return;
     const params = new URLSearchParams(window.location.search);
@@ -3742,8 +3743,21 @@ setSchedulesByChannel(sched);
     if (!ref) return;
     localStorage.setItem("nubian_ref", ref);
     fetch(`${API_BASE}/api/affiliate/click?ref=${encodeURIComponent(ref)}`, { method: "POST" }).catch(() => {});
-    navigate(isAuthenticated ? "home" : "subscribe");
+    if (isAuthenticated) {
+      navigate("home");
+    } else {
+      setPendingRefLogin(true);
+      setShowLoginModal(true);
+    }
   }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // After logging in via the referral modal, navigate home
+  useEffect(() => {
+    if (pendingRefLogin && isAuthenticated) {
+      setPendingRefLogin(false);
+      navigate("home");
+    }
+  }, [isAuthenticated, pendingRefLogin, navigate]);
 
   // Verify Stripe session on redirect back from checkout
   useEffect(() => {
