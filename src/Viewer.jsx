@@ -3550,7 +3550,7 @@ export default function NubianLiveViewer() {
   }, [page]);
 
   useEffect(() => {
-    const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "Coming Soon"];
+    const GENRE_CATS = ["Reality", "Lifestyle", "Movies", "Documentaries", "News", "Talk", "Podcast", "Coming Soon"];
     fetch(`${API_BASE}/api/content`)
       .then(r => r.json())
       .then(data => {
@@ -3581,7 +3581,8 @@ export default function NubianLiveViewer() {
         });
         const liveNow = DEFAULT_CATEGORIES.find(c => c.name === "Live Now");
         grouped["Movies & Documentaries"] = [...grouped["Movies"], ...grouped["Documentaries"]];
-        const DISPLAY_CATS = ["Reality", "Lifestyle", "Movies & Documentaries", "Coming Soon"];
+        grouped["News, Talk & Podcasts"] = [...grouped["News"], ...grouped["Talk"], ...grouped["Podcast"]];
+        const DISPLAY_CATS = ["Reality", "Lifestyle", "Movies & Documentaries", "News, Talk & Podcasts", "Coming Soon"];
         const built = DISPLAY_CATS.filter(g => grouped[g].length > 0).map(g => ({ name: g, items: grouped[g] }));
         if (liveNow) built.push(liveNow);
         setCategories(built);
