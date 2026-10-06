@@ -287,6 +287,7 @@ const DEFAULT_CATEGORIES = [
       { id: 8,  title: "The Chavis Chronicles",   thumb: "📺", type: "LIVE", tag: "LIVE", description: "The Chavis Chronicles",   logo: "https://assets.nubianlive.com/NubianLIVEicon.png"           },
       { id: 9,  title: "Nubian News",             thumb: "📺", type: "LIVE", tag: "LIVE", description: "Nubian News",             logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png" },
       { id: 10, title: "Washington Informer TV",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "Washington Informer TV",  logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"       },
+      { id: 15, title: "Humor Mill",            thumb: "📺", type: "LIVE", tag: "LIVE", description: "Humor Mill",            logo: "https://assets.nubianlive.com/hmtvlogo.jpeg"                 },
       { id: 11, title: "Channel 56",            thumb: "📺", type: "LIVE", tag: "LIVE", description: "Channel 56",            logo: "https://assets.nubianlive.com/ch56_logo_temp.png"            },
       { id: 12, title: "Nubian Latino",         thumb: "📺", type: "LIVE", tag: "LIVE", description: "Nubian Latino",         logo: "https://assets.nubianlive.com/nulat_logo.png"                },
       { id: 13, title: "Nubian Uganda",         thumb: "📺", type: "LIVE", tag: "LIVE", description: "Nubian Uganda",         logo: "https://assets.nubianlive.com/nuuganLogotransp.png"          },
@@ -318,6 +319,7 @@ const channels = [
   { id: 8, name: "The Chavis Chronicles",   current: "The Chavis Chronicles",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/ef727d59951122524e0261decc68083b/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianLIVEicon.png"             },
   { id: 9, name: "Nubian News",             current: "Nubian News",            next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/789f1e57e9771be5471781f2b9cdec82/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianGlobalNewsLIVEIcon.png"  },
   { id: 10, name: "Washington Informer TV", current: "Washington Informer TV",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/7f8799c2e9cd95f892bad3de05d1b188/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/WITVNubianLIVEIcon.png"        },
+  { id: 15, name: "Humor Mill",            current: "Humor Mill",             next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/31d19fe9cd697ac4763b07cb724e3e80/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/hmtvlogo.jpeg"                },
   { id: 11, name: "Channel 56",            current: "Channel 56",             next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/ff43a7184215ab1f6779f188f6d7a9de/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/ch56_logo_temp.png"            },
   { id: 12, name: "Nubian Latino",         current: "Nubian Latino",          next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/b6eb1063a8dd6684f046b9f568ad2933/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/nulat_logo.png"                },
   { id: 13, name: "Nubian Uganda",         current: "Nubian Uganda",          next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/f7fad09fd8312e1557c02c607a3a5f2e/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/nuuganLogotransp.png"          },
@@ -3921,7 +3923,7 @@ setSchedulesByChannel(sched);
               <div style={{ textAlign: "center", padding: "100px 24px" }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>📺</div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 12 }}>Sign Up Free to Watch Live TV</div>
-                <div style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Create a free account to access all 13 live channels and Nubian Radio.</div>
+                <div style={{ color: "var(--text2)", fontSize: 14, marginBottom: 28 }}>Create a free account to access all 14 live channels and Nubian Radio.</div>
                 <button onClick={() => setShowLoginModal(true)} style={{ background: "var(--accent)", color: "white", borderRadius: 8, padding: "13px 32px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>Sign Up Free</button>
               </div>
             ) : (
