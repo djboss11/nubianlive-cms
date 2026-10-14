@@ -3647,7 +3647,7 @@ setSchedulesByChannel(sched);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // On Auth0 login: owner bypass, link subscription, or redirect based on plan
+  // On Auth0 login: owner bypass, then DB-first subscription check, localStorage fallback
   useEffect(() => {
     if (!isAuthenticated || !user) return;
     if (FULL_ACCESS_EMAILS.includes(userEmail)) {
@@ -3656,43 +3656,46 @@ setSchedulesByChannel(sched);
       setSubscription(ownerSub);
       return;
     }
-    const existing = getSubscription();
-    if (existing?.subscribed) {
-      if (!existing.customer_email && userEmail) {
-        const updated = { ...existing, customer_email: userEmail };
-        saveSubscription(updated);
-        setSubscription(updated);
-      }
-    } else if (existing?.plan === "free") {
-      setPage("live");
-    } else if (!existing) {
-      // Nothing in localStorage — check the database
-      if (!userEmail) { setPage("subscribe"); return; }
-      (async () => {
-        try {
-          const res = await fetch(`${API_BASE}/api/subscribers?email=${encodeURIComponent(userEmail)}`);
-          if (!res.ok) { setPage("subscribe"); return; }
+    if (!userEmail) { setPage("subscribe"); return; }
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/subscribers?email=${encodeURIComponent(userEmail)}`);
+        if (res.ok) {
           const data = await res.json();
+          if (data?.plan === "monthly" || data?.plan === "annual") {
+            const sub = { subscribed: true, plan: data.plan, customer_email: userEmail, email: userEmail };
+            saveSubscription(sub);
+            setSubscription(sub);
+            setPage("home");
+            return;
+          }
           if (data?.plan === "free") {
             const sub = { subscribed: false, plan: "free", email: userEmail };
             saveSubscription(sub);
             setSubscription(sub);
             setPage("live");
-          } else if (data?.plan === "monthly" || data?.plan === "annual") {
-            const sub = { subscribed: true, plan: data.plan, customer_email: userEmail, email: userEmail };
-            saveSubscription(sub);
-            setSubscription(sub);
-            setPage("home");
-          } else {
-            setPage("subscribe");
+            return;
           }
-        } catch {
-          setPage("subscribe");
+          // No account in DB — preserve a guest pass if one is stored, otherwise subscribe page
+          const existing = getSubscription();
+          if (!existing?.plan || existing.plan !== "guest") setPage("subscribe");
+          return;
         }
-      })();
-    } else {
-      setPage("subscribe");
-    }
+      } catch {}
+      // DB unreachable — fall back to localStorage so the app still works offline/degraded
+      const existing = getSubscription();
+      if (existing?.subscribed) {
+        if (!existing.customer_email && userEmail) {
+          const updated = { ...existing, customer_email: userEmail };
+          saveSubscription(updated);
+          setSubscription(updated);
+        }
+      } else if (existing?.plan === "free") {
+        setPage("live");
+      } else {
+        setPage("subscribe");
+      }
+    })();
   }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = useCallback(() => {
@@ -3707,14 +3710,26 @@ setSchedulesByChannel(sched);
     setDetailItem(null);
   }, []);
 
-  // Reads the stored subscription and routes to the right page after login.
-  const navigateAfterLogin = useCallback(() => {
+  // Routes to the right page after login. Checks the database first so new-device
+  // and cleared-browser sessions land correctly; falls back to localStorage on failure.
+  const navigateAfterLogin = useCallback(async () => {
+    if (userEmail) {
+      try {
+        const res = await fetch(`${API_BASE}/api/subscribers?email=${encodeURIComponent(userEmail)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.plan === "monthly" || data?.plan === "annual") { navigate("home"); return; }
+          if (data) { navigate("live"); return; }
+          navigate("subscribe"); return;
+        }
+      } catch {}
+    }
     const sub = getSubscription();
     const plan = sub?.plan;
     if (plan === "free") navigate("live");
     else if (["monthly", "annual", "owner", "guest"].includes(plan)) navigate("home");
     else navigate("subscribe");
-  }, [navigate]);
+  }, [navigate, userEmail]);
 
   useEffect(() => {
     const slugToChannel = {
