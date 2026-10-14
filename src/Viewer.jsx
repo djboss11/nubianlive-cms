@@ -1957,8 +1957,24 @@ function NavUserWidget({ user, isAuthenticated, onLogin, onLogout, onManageSubsc
 
 // ── LOGIN MODAL ───────────────────────────────────────────────────────────────
 
+async function trackAffiliateLogin(getIdTokenClaims) {
+  const ref_code = localStorage.getItem("nubian_affiliate_ref");
+  if (!ref_code) return;
+  try {
+    const claims = await getIdTokenClaims();
+    if (claims?.email) {
+      fetch(`${API_BASE}/api/affiliate/track-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref_code, email: claims.email }),
+      }).catch(() => {});
+      localStorage.removeItem("nubian_affiliate_ref");
+    }
+  } catch {}
+}
+
 function LoginModal({ onClose, onSuccess }) {
-  const { loginWithPopup } = useAuth0();
+  const { loginWithPopup, getIdTokenClaims } = useAuth0();
   const [tab, setTab] = useState("signup");
   const [loading, setLoading] = useState(null); // "google" | "continue" | null
   const [error, setError] = useState("");
@@ -1968,6 +1984,7 @@ function LoginModal({ onClose, onSuccess }) {
     try {
       await loginWithPopup({ authorizationParams: { connection: "google-oauth2", ...(tab === "signup" ? { screen_hint: "signup" } : {}) } });
       gtag("event", "login", { method: "google" });
+      await trackAffiliateLogin(getIdTokenClaims);
       (onSuccess ?? onClose)();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Google sign-in failed. Please try again.");
@@ -1986,6 +2003,7 @@ function LoginModal({ onClose, onSuccess }) {
         },
       });
       gtag("event", "login", { method: "email" });
+      await trackAffiliateLogin(getIdTokenClaims);
       (onSuccess ?? onClose)();
     } catch (e) {
       if (e.message && !e.message.includes("closed")) setError("Sign-in failed. Please try again.");
@@ -3789,6 +3807,7 @@ setSchedulesByChannel(sched);
     const ref = params.get("ref");
     if (!ref) return;
     localStorage.setItem("nubian_ref", ref);
+    localStorage.setItem("nubian_affiliate_ref", ref);
     fetch(`${API_BASE}/api/affiliate/click?ref=${encodeURIComponent(ref)}`, { method: "POST" }).catch(() => {});
     if (isAuthenticated) {
       navigate("home");
