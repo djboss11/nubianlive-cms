@@ -453,14 +453,14 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
     if (!nowPlaying) return;
     setOverlayVisible(true);
     clearTimeout(overlayTimerRef.current);
-    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
+    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 4000);
     return () => clearTimeout(overlayTimerRef.current);
   }, [nowPlaying]);
 
   function showOverlayBriefly() {
     setOverlayVisible(true);
     clearTimeout(overlayTimerRef.current);
-    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 5000);
+    overlayTimerRef.current = setTimeout(() => setOverlayVisible(false), 4000);
   }
 
   function loadHls(url, seekPos, loop) {
@@ -591,9 +591,9 @@ function ScheduledChannel({ muted, volume, displayOffsetHr, tzLabel, channelName
   }, [muted, volume]);
 
   return (
-    <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }} onMouseEnter={showOverlayBriefly}>
+    <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }} onMouseEnter={showOverlayBriefly} onMouseMove={showOverlayBriefly} onTouchStart={showOverlayBriefly}>
       <video ref={videoRef} playsInline style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }} />
-      <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 8, alignItems: "center" }}>
+      <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 8, alignItems: "center", opacity: overlayVisible ? 1 : 0, transition: "opacity 0.6s ease" }}>
         <LiveBadge />
         {isAdSlate && (
           <span style={{ background: "#ff9500", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 3, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>AD</span>
@@ -1148,6 +1148,8 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
   const [volume, setVolume] = useState(0.8);
   const [radioPlaying, setRadioPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [playerOverlay, setPlayerOverlay] = useState(true);
+  const playerOverlayTimerRef = useRef(null);
   const isMobile = w < 768;
   const sidePad = isMobile ? 16 : 48;
   const isRadio = !!activeChannel.isRadio;
@@ -1159,6 +1161,17 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
       document.exitFullscreen().catch(() => {});
     }
   };
+
+  function showPlayerOverlayBriefly() {
+    setPlayerOverlay(true);
+    clearTimeout(playerOverlayTimerRef.current);
+    playerOverlayTimerRef.current = setTimeout(() => setPlayerOverlay(false), 4000);
+  }
+
+  useEffect(() => {
+    playerOverlayTimerRef.current = setTimeout(() => setPlayerOverlay(false), 4000);
+    return () => clearTimeout(playerOverlayTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -1305,7 +1318,7 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
 
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20 }}>
         {/* Main player area */}
-        <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", flex: 1 }}>
+        <div onMouseEnter={showPlayerOverlayBriefly} onMouseMove={showPlayerOverlayBriefly} onTouchStart={showPlayerOverlayBriefly} style={{ background: "#111", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", flex: 1 }}>
           <div ref={playerContainerRef} style={{ position: "relative", background: "#000", aspectRatio: "16/9", width: "100%" }}>
             {isRadio ? (
               /* Radio UI */
@@ -1426,8 +1439,8 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
                 )}
                 {!SCHEDULED_CHANNEL_IDS.includes(activeChannel.id) && (
                   <>
-                    <div style={{ position: "absolute", top: 16, left: 16 }}><LiveBadge /></div>
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none" }}>
+                    <div style={{ position: "absolute", top: 16, left: 16, opacity: playerOverlay ? 1 : 0, transition: "opacity 0.6s ease" }}><LiveBadge /></div>
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 16px", background: "linear-gradient(to top, #000, transparent)", pointerEvents: "none", opacity: playerOverlay ? 1 : 0, transition: "opacity 0.6s ease" }}>
                       <div style={{ fontWeight: 700, fontSize: 18 }}>{activeChannel.current}</div>
                       <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 4 }}>{t.upNext}: {activeChannel.next}</div>
                     </div>
@@ -1438,7 +1451,7 @@ function LiveTV({ t, initialChannelId, schedulesByChannel, contentMap, fallbackV
           </div>
 
           {!isRadio && (
-            <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, opacity: playerOverlay ? 1 : 0, transition: "opacity 0.6s ease" }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{activeChannel.name}</div>
                 <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{activeChannel.current}</div>
