@@ -3718,9 +3718,22 @@ setSchedulesByChannel(sched);
         const res = await fetch(`${API_BASE}/api/subscribers?email=${encodeURIComponent(userEmail)}`);
         if (res.ok) {
           const data = await res.json();
-          if (data?.plan === "monthly" || data?.plan === "annual") { navigate("home"); return; }
-          if (data) { navigate("live"); return; }
-          navigate("subscribe"); return;
+          if (data?.plan === "monthly" || data?.plan === "annual") {
+            const sub = { subscribed: true, plan: data.plan, email: userEmail, customer_email: userEmail };
+            saveSubscription(sub);
+            setSubscription(sub);
+            navigate("home");
+            return;
+          }
+          if (data?.plan === "free") {
+            const sub = { subscribed: false, plan: "free", email: userEmail };
+            saveSubscription(sub);
+            setSubscription(sub);
+            navigate("live");
+            return;
+          }
+          navigate("subscribe");
+          return;
         }
       } catch {}
     }
