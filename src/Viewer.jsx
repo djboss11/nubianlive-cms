@@ -281,7 +281,7 @@ const DEFAULT_CATEGORIES = [
       { id: 10, title: "Eastern",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Eastern Time — ET",           logo: "https://assets.nubianlive.com/live_east.png"     },
       { id: 15, title: "Central",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central Time — CT",           logo: "https://assets.nubianlive.com/live_central.png"  },
       { id: 11, title: "Pacific",      thumb: "📺", type: "LIVE", tag: "LIVE", description: "Pacific Time — PT",           logo: "https://assets.nubianlive.com/live_west.png"     },
-      { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "West Africa Time — WAT",      logo: "https://assets.nubianlive.com/live_africa.png"   },
+      { id: 12, title: "West Africa",  thumb: "📺", type: "LIVE", tag: "LIVE", description: "Greenwich Mean Time — GMT",    logo: "https://assets.nubianlive.com/live_africa.png"   },
       { id: 16, title: "Europe",       thumb: "📺", type: "LIVE", tag: "LIVE", description: "Central European Time — CET", logo: "https://assets.nubianlive.com/live_europe.png"   },
       { id: 7,  title: "OFEG",                    thumb: "📺", type: "LIVE", tag: "LIVE", description: "OFEG",                      logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"           },
       { id: 8,  title: "The Chavis Chronicles",   thumb: "📺", type: "LIVE", tag: "LIVE", description: "The Chavis Chronicles",   logo: "https://assets.nubianlive.com/NubianLIVEicon.png"           },
@@ -313,7 +313,7 @@ const channels = [
   { id: 1, name: "Eastern",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 0,  tzLabel: "ET",  logo: "https://assets.nubianlive.com/live_east.png"    },
   { id: 5, name: "Central",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 3600,  displayOffsetHr: -1, tzLabel: "CT",  logo: "https://assets.nubianlive.com/live_central.png" },
   { id: 2, name: "Pacific",      current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 10800, displayOffsetHr: -3, tzLabel: "PT",  logo: "https://assets.nubianlive.com/live_west.png"    },
-  { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 5,  tzLabel: "WAT", logo: "https://assets.nubianlive.com/live_africa.png"  },
+  { id: 3, name: "West Africa",  current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 0,     displayOffsetHr: 4,  tzLabel: "GMT", logo: "https://assets.nubianlive.com/live_africa.png"  },
   { id: 6, name: "Europe",       current: "Live Now", next: "Coming Up", status: "live", thumb: "📺", blockOffsetSec: 7200,  displayOffsetHr: 6,  tzLabel: "CET", logo: "https://assets.nubianlive.com/live_europe.png"  },
   { id: 7, name: "OFEG",                    current: "OFEG",                  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/14556856970a6c1e6476c3e132481ab1/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/OFEG_Red_transp.png"            },
   { id: 8, name: "The Chavis Chronicles",   current: "The Chavis Chronicles",  next: "Coming Up", status: "live", thumb: "📺", hlsUrl: "https://customer-nbylg9nks43yj4vv.cloudflarestream.com/ef727d59951122524e0261decc68083b/manifest/video.m3u8", syncLoop: true,  logo: "https://assets.nubianlive.com/NubianLIVEicon.png"             },
@@ -345,7 +345,7 @@ const AD_SLATE_ID = "5ddd6c7f8aa7108453155d183f200727";
 const FULL_ACCESS_EMAILS = ["leverettmedia@gmail.com", "leverettmedia+playreview@gmail.com"];
 
 const CHANNEL_TZ_OFFSETS = {
-  Eastern: 0, Central: -1, Pacific: -3, "West Africa": 5, Europe: 6,
+  Eastern: 0, Central: -1, Pacific: -3, "West Africa": 4, Europe: 6,
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
