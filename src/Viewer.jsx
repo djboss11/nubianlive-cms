@@ -1057,9 +1057,7 @@ function ContinueWatchingCard({ item, onSelect }) {
         }}>{item.title}</div>
         {hovered && (
           <div style={{ position: "absolute", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 20, marginLeft: 4 }}>▶</span>
-            </div>
+            <span style={{ fontSize: 28, color: "white" }}>▶</span>
           </div>
         )}
       </div>
