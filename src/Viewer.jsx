@@ -194,6 +194,7 @@ const css = `
   button { cursor: pointer; font-family: inherit; border: none; }
   input { font-family: inherit; }
   * { -webkit-tap-highlight-color: transparent; }
+  @keyframes pauseAdFadeIn { from { opacity: 0; } to { opacity: 1; } }
 `;
 
 // ── PLATFORM DETECTION ────────────────────────────────────────────────────────
@@ -1736,13 +1737,25 @@ function SearchPanel({ query, onSelect, t }) {
 
 // ── PLAYER MODAL ──────────────────────────────────────────────────────────────
 
-function PlayerModal({ item, onClose }) {
+const PAUSE_AD_SESSION_KEY = "nlPauseAdDismissed";
+
+function PlayerModal({ item, onClose, globalPauseAdImageUrl, globalPauseAdClickUrl }) {
   const w = useWindowWidth();
   const isMobile = w < 768;
   const videoRef = useRef(null);
   const [showUnmute, setShowUnmute] = useState(true);
   const [unmuteFading, setUnmuteFading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showPauseAd, setShowPauseAd] = useState(false);
+  const pauseTimerRef = useRef(null);
+
+  const pauseAdImageUrl = item.pause_ad_image_url || globalPauseAdImageUrl || null;
+  const pauseAdClickUrl = item.pause_ad_click_url || globalPauseAdClickUrl || null;
+
+  const dismissPauseAd = () => {
+    setShowPauseAd(false);
+    try { sessionStorage.setItem(PAUSE_AD_SESSION_KEY, "1"); } catch {}
+  };
 
   const handleUnmute = () => {
     const video = videoRef.current;
@@ -1820,6 +1833,28 @@ function PlayerModal({ item, onClose }) {
     }
   }, [item]);
 
+  useEffect(() => {
+    if (!pauseAdImageUrl) return;
+    const video = videoRef.current;
+    if (!video) return;
+    const onPause = () => {
+      try { if (sessionStorage.getItem(PAUSE_AD_SESSION_KEY)) return; } catch {}
+      if (video.currentTime < 5) return;
+      pauseTimerRef.current = setTimeout(() => setShowPauseAd(true), 1500);
+    };
+    const onPlay = () => {
+      clearTimeout(pauseTimerRef.current);
+      setShowPauseAd(false);
+    };
+    video.addEventListener("pause", onPause);
+    video.addEventListener("play", onPlay);
+    return () => {
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("play", onPlay);
+      clearTimeout(pauseTimerRef.current);
+    };
+  }, [pauseAdImageUrl, item]);
+
   const modalStyle = isMobile
     ? {
         position: "fixed", inset: 0, borderRadius: 0,
@@ -1854,6 +1889,19 @@ function PlayerModal({ item, onClose }) {
                 muted
                 style={{ width: "100%", maxHeight: isMobile ? "55vh" : 480, display: "block" }}
               />
+              {showPauseAd && pauseAdImageUrl && (
+                <div
+                  style={{ position: "absolute", inset: 0, zIndex: 10, animation: "pauseAdFadeIn 0.3s ease", cursor: pauseAdClickUrl ? "pointer" : "default" }}
+                  onClick={pauseAdClickUrl ? (e) => { e.stopPropagation(); window.open(pauseAdClickUrl, "_blank"); } : undefined}
+                >
+                  <img src={pauseAdImageUrl} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.72)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 3, letterSpacing: 1, fontFamily: "inherit", pointerEvents: "none" }}>Ad</div>
+                  <button
+                    onClick={e => { e.stopPropagation(); dismissPauseAd(); }}
+                    style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.72)", color: "#fff", borderRadius: "50%", width: 32, height: 32, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+                  >×</button>
+                </div>
+              )}
               {showUnmute && (
                 <div style={{
                   position: "absolute", inset: 0,
@@ -3574,6 +3622,7 @@ export default function NubianLiveViewer() {
   const [schedulesByChannel, setSchedulesByChannel] = useState({});
   const [contentMap, setContentMap] = useState({});
   const [fallbackVideoId, setFallbackVideoId] = useState(null);
+  const [globalPauseAd, setGlobalPauseAd] = useState({ imageUrl: null, clickUrl: null });
   const t = T[lang];
   const userEmail = user?.email ?? null;
   const isOwner = subscription?.plan === "owner" || FULL_ACCESS_EMAILS.includes(userEmail);
@@ -3611,6 +3660,8 @@ export default function NubianLiveViewer() {
             rating: item.rating || undefined,
             duration: durationStr,
             description: item.description || undefined,
+            pause_ad_image_url: item.pause_ad_image_url || undefined,
+            pause_ad_click_url: item.pause_ad_click_url || undefined,
           });
         });
         const liveNow = DEFAULT_CATEGORIES.find(c => c.name === "Live Now");
@@ -3650,6 +3701,10 @@ export default function NubianLiveViewer() {
 setSchedulesByChannel(sched);
       setContentMap(cmap);
       setFallbackVideoId(settings?.fallback_video_id || null);
+      setGlobalPauseAd({
+        imageUrl: settings?.global_pause_ad_image_url || null,
+        clickUrl: settings?.global_pause_ad_click_url || null,
+      });
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -4091,7 +4146,7 @@ setSchedulesByChannel(sched);
       </div>
 
       {/* Player modal */}
-      {playing && <PlayerModal item={playing} onClose={() => setPlaying(null)} />}
+      {playing && <PlayerModal item={playing} onClose={() => setPlaying(null)} globalPauseAdImageUrl={globalPauseAd.imageUrl} globalPauseAdClickUrl={globalPauseAd.clickUrl} />}
     </LangContext.Provider>
   );
 }
